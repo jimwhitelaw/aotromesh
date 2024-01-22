@@ -32,3 +32,6 @@ release/
 .vscode/extensions.json
 /compile_commands.json
 data/*
+platformio.ini
+.vscode/extensions.json
+variants/tbeam/platformio.ini
