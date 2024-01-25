@@ -103,9 +103,11 @@ int32_t EFlagsModule::runOnce()
             flagState = FLAG_NONE;
             sendFlagCommand(NODENUM_BROADCAST, FLAG_NONE, UINT16_MAX);
             LOG_INFO("Intialized Base Station");
-        } else // typical function
+        }
+        else // typical function
         {
-            switch (flagState) {
+            switch (flagState)
+            {
             case FLAG_NONE:
                 sendFlagCommand(nodenum, FLAG_NONE);
                 flagState = GREEN_FLAG;
@@ -141,9 +143,11 @@ int32_t EFlagsModule::runOnce()
             }
         }
         return DELAY_INTERVAL;
-    } else // flag station - init led
+    }
+    else // flag station - init led
     {
-        if (firstTime) {
+        if (firstTime)
+        {
             strip.begin();
             strip.setBrightness(20);
             strip.show(); // Initialize all pixels to 'off'
@@ -158,7 +162,8 @@ int32_t EFlagsModule::runOnce()
 void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
 {
     meshtastic_MeshPacket *p = allocDataPacket();
-    if (p) {
+    if (p)
+    {
         p->to = dest;
         // set flag state
         p->decoded.payload.bytes[0] = cmd;
@@ -166,7 +171,9 @@ void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
         p->decoded.payload.bytes[1] = car_num & 0xFF00;
         p->decoded.payload.bytes[2] = car_num & 0xFF;
         p->decoded.payload.size = 3;
-    } else {
+    }
+    else
+    {
         p->decoded.payload.size = 1;
     }
     service.sendToMesh(p);
@@ -174,7 +181,8 @@ void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
 
 void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
 {
-    switch (state) {
+    switch (state)
+    {
     case FLAG_NONE:
         strip.clear();
         strip.show();
