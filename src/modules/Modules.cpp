@@ -24,8 +24,6 @@
 #if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
 #include "modules/DetectionSensorModule.h"
 #include "modules/EFlagsModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
 #include "modules/NeighborInfoModule.h"
 #endif
 #if !MESHTASTIC_EXCLUDE_GPS
@@ -33,16 +31,10 @@
 #endif
 #if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
 #include "modules/RemoteHardwareModule.h"
-<<<<<<< HEAD
-#include "modules/ReplyModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_TRACEROUTE
-=======
 // #include "modules/ReplyModule.h"
 #include "modules/EFlagsModule.h"
 #include "modules/RoutingModule.h"
 #include "modules/TextMessageModule.h"
->>>>>>> 4de1f033 (Added flag module)
 #include "modules/TraceRouteModule.h"
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
@@ -120,18 +112,10 @@ void setupModules()
         // Note: if the rest of meshtastic doesn't need to explicitly use your module, you do not need to assign the instance
         // to a global variable.
 
-<<<<<<< HEAD
-        // Example: Put your module here
-        // new ReplyModule();
-        new EFlagsModule();
-
-#if (HAS_BUTTON || ARCH_PORTDUINO) && !MESHTASTIC_EXCLUDE_INPUTBROKER
-=======
         new RemoteHardwareModule();
         // new ReplyModule();
         new EFlagsModule();
 #if HAS_BUTTON || ARCH_PORTDUINO
->>>>>>> 4de1f033 (Added flag module)
         rotaryEncoderInterruptImpl1 = new RotaryEncoderInterruptImpl1();
         if (!rotaryEncoderInterruptImpl1->init()) {
             delete rotaryEncoderInterruptImpl1;
