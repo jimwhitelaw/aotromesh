@@ -9,6 +9,7 @@
 #include "modules/AtakPluginModule.h"
 #include "modules/CannedMessageModule.h"
 #include "modules/DetectionSensorModule.h"
+#include "modules/EFlagsModule.h"
 #include "modules/NeighborInfoModule.h"
 #include "modules/NodeInfoModule.h"
 #include "modules/PositionModule.h"
