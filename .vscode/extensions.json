@@ -4,10 +4,7 @@
     "recommendations": [
         "platformio.platformio-ide"
     ],
-<<<<<<< HEAD
-=======
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
     ]
->>>>>>> 474ec169 (Add local prefs platformio.ini extensions.json)
 }
