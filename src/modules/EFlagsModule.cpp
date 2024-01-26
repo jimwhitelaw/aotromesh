@@ -12,7 +12,7 @@
 #define PIN 4
 
 #define DELAY_INTERVAL 4000 // Send a flag change command every 4 sec
-#define BASE_STATION 1      // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 0      // Flag stations only receive and respond to command. Only base unit sends commands
 
 EFlagsModule *eflagsModule;
 uint8_t flagState = 0;
@@ -25,7 +25,7 @@ uint8_t flagState = 0;
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(7, PIN, NEO_RGB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(7, PIN, NEO_GRB + NEO_KHZ800);
 
 // CRGB leds[NUMMATRIX];
 // // Define matrix width and height.
@@ -115,7 +115,7 @@ int32_t EFlagsModule::runOnce()
     {
         if (firstTime) {
             strip.begin();
-            strip.setBrightness(30);
+            strip.setBrightness(20);
             strip.show(); // Initialize all pixels to 'off'
             setFlagState(FLAG_NONE, UINT16_MAX);
             firstTime = false;
@@ -133,11 +133,11 @@ void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
         break;
 
     case GREEN_FLAG:
-        strip.fill(LED_GREEN_MEDIUM, 0, 7);
+        strip.fill(strip.Color(0, 0xFF, 0), 0, 7);
         strip.show();
         break;
     case YELLOW_FLAG:
-        strip.fill(LED_YELLOW_MEDIUM, 0, 7);
+        strip.fill(strip.Color(0x77, 0x77, 0), 0, 7);
         strip.show();
         break;
     default:
