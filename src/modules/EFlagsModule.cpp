@@ -12,7 +12,7 @@
 #define PIN 4
 
 #define DELAY_INTERVAL 4000 // Send a flag change command every 4 sec
-#define BASE_STATION 0      // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 1      // Flag stations only receive and respond to command. Only base unit sends commands
 
 EFlagsModule *eflagsModule;
 uint8_t flagState = 0;
@@ -102,12 +102,30 @@ int32_t EFlagsModule::runOnce()
             LOG_INFO("Intializing Base Station");
         } else // typical function
         {
-            if (flagState == FLAG_NONE || flagState == YELLOW_FLAG) {
+            switch (flagState) {
+            case FLAG_NONE:
+            case RED_FLAG:
                 flagState = GREEN_FLAG;
                 sendFlagCommand(nodenum, GREEN_FLAG, car_number);
-            } else {
+                break;
+            case GREEN_FLAG:
                 flagState = YELLOW_FLAG;
                 sendFlagCommand(nodenum, YELLOW_FLAG, car_number);
+                break;
+            case YELLOW_FLAG:
+                flagState = BLUE_FLAG;
+                sendFlagCommand(nodenum, BLUE_FLAG, car_number);
+                break;
+            case BLUE_FLAG:
+                flagState = WHITE_FLAG;
+                sendFlagCommand(nodenum, WHITE_FLAG, car_number);
+                break;
+            case WHITE_FLAG:
+                flagState = RED_FLAG;
+                sendFlagCommand(nodenum, RED_FLAG, car_number);
+                break;
+            default:
+                break;
             }
         }
         return DELAY_INTERVAL;
@@ -131,7 +149,6 @@ void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
         strip.clear();
         strip.show();
         break;
-
     case GREEN_FLAG:
         strip.fill(strip.Color(0, 0xFF, 0), 0, 7);
         strip.show();
@@ -140,10 +157,23 @@ void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
         strip.fill(strip.Color(0x77, 0x77, 0), 0, 7);
         strip.show();
         break;
+    case RED_FLAG:
+        strip.fill(strip.Color(0xFF, 0, 0), 0, 7);
+        strip.show();
+        break;
+    case BLUE_FLAG:
+        strip.fill(strip.Color(0, 0, 0xFF), 0, 7);
+        strip.show();
+        break;
+    case WHITE_FLAG:
+        strip.fill(strip.Color(0xFF, 0xFF, 0xFF), 0, 7);
+        strip.show();
+        break;
     default:
         break;
     }
 }
+
 void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
 {
     meshtastic_MeshPacket *p = allocDataPacket();
