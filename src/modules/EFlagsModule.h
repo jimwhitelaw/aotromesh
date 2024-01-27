@@ -114,7 +114,7 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
     virtual int32_t runOnce() override;
 
   private:
-    void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = 0);
+    void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
     void setFlagState(uint8_t state, uint16_t car_num);
     bool firstTime = true;
 };

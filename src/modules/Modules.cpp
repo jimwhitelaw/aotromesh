@@ -14,8 +14,7 @@
 #include "modules/NodeInfoModule.h"
 #include "modules/PositionModule.h"
 #include "modules/RemoteHardwareModule.h"
-// #include "modules/ReplyModule.h"
-#include "modules/EFlagsModule.h"
+#include "modules/ReplyModule.h"
 #include "modules/RoutingModule.h"
 #include "modules/TextMessageModule.h"
 #include "modules/TraceRouteModule.h"
@@ -70,7 +69,7 @@ void setupModules()
                 // to a global variable.
 
                 new RemoteHardwareModule();
-                // new ReplyModule();
+                new ReplyModule();
                 new EFlagsModule();
 #if HAS_BUTTON || ARCH_PORTDUINO
                 rotaryEncoderInterruptImpl1 = new RotaryEncoderInterruptImpl1();

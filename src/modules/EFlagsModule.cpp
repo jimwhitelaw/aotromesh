@@ -78,9 +78,6 @@ ProcessMessage EFlagsModule::handleReceived(const meshtastic_MeshPacket &mp)
     {
         auto &p = mp.decoded;
         LOG_INFO("Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
-        char *msg = new char[80];
-        sprintf(msg, "Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
-        screen->print(msg);
         uint16_t car_num = (p.payload.bytes[2] << 8) | p.payload.bytes[3];
         setFlagState(p.payload.bytes[0], car_num);
     }
@@ -95,35 +92,44 @@ int32_t EFlagsModule::runOnce()
         uint16_t car_number = UINT16_MAX;
 
         if (firstTime) // first time we run, do setup stuff
-        {              // for testing, we alternate between sending green flag and yellow flag
+        {
             firstTime = false;
             flagState = FLAG_NONE;
             sendFlagCommand(nodenum, FLAG_NONE, UINT16_MAX);
-            LOG_INFO("Intializing Base Station");
+            LOG_INFO("Intialized Base Station");
         } else // typical function
         {
             switch (flagState) {
             case FLAG_NONE:
-            case RED_FLAG:
+                sendFlagCommand(NODENUM_BROADCAST, FLAG_NONE);
                 flagState = GREEN_FLAG;
-                sendFlagCommand(nodenum, GREEN_FLAG, car_number);
                 break;
+
             case GREEN_FLAG:
+                sendFlagCommand(nodenum, GREEN_FLAG);
                 flagState = YELLOW_FLAG;
-                sendFlagCommand(nodenum, YELLOW_FLAG, car_number);
                 break;
+
             case YELLOW_FLAG:
+                sendFlagCommand(nodenum, YELLOW_FLAG);
                 flagState = BLUE_FLAG;
-                sendFlagCommand(nodenum, BLUE_FLAG, car_number);
                 break;
+
             case BLUE_FLAG:
+                sendFlagCommand(nodenum, BLUE_FLAG);
                 flagState = WHITE_FLAG;
-                sendFlagCommand(nodenum, WHITE_FLAG, car_number);
                 break;
+
             case WHITE_FLAG:
+                sendFlagCommand(nodenum, WHITE_FLAG);
                 flagState = RED_FLAG;
-                sendFlagCommand(nodenum, RED_FLAG, car_number);
                 break;
+
+            case RED_FLAG:
+                sendFlagCommand(NODENUM_BROADCAST, RED_FLAG);
+                flagState = GREEN_FLAG;
+                break;
+
             default:
                 break;
             }
@@ -140,6 +146,23 @@ int32_t EFlagsModule::runOnce()
         }
         return 0;
     }
+}
+
+void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
+{
+    meshtastic_MeshPacket *p = allocDataPacket();
+    if (p) {
+        p->to = dest;
+        // set flag state
+        p->decoded.payload.bytes[0] = cmd;
+        // car_num is is two bytes
+        p->decoded.payload.bytes[1] = car_num & 0xFF00;
+        p->decoded.payload.bytes[2] = car_num & 0xFF;
+        p->decoded.payload.size = 3;
+    } else {
+        p->decoded.payload.size = 1;
+    }
+    service.sendToMesh(p);
 }
 
 void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
@@ -172,21 +195,4 @@ void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
     default:
         break;
     }
-}
-
-void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
-{
-    meshtastic_MeshPacket *p = allocDataPacket();
-    if (p) {
-        p->to = dest;
-        // set flag state
-        p->decoded.payload.bytes[0] = cmd;
-        // car_num is is two bytes
-        p->decoded.payload.bytes[1] = car_num & 0xFF00;
-        p->decoded.payload.bytes[2] = car_num & 0xFF;
-        p->decoded.payload.size = 3;
-    } else {
-        p->decoded.payload.size = 1;
-    }
-    service.sendToMesh(p);
 }
