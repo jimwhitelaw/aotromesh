@@ -12,10 +12,11 @@
 #define PIN 4
 
 #define DELAY_INTERVAL 4000 // Send a flag change command every 4 sec
-#define BASE_STATION 1      // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 0      // Flag stations only receive and respond to command. Only base unit sends commands
 
 EFlagsModule *eflagsModule;
 uint8_t flagState = 0;
+NodeNum nodenums[4] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334};
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -77,7 +78,7 @@ ProcessMessage EFlagsModule::handleReceived(const meshtastic_MeshPacket &mp)
                        // they have changed state
     {
         auto &p = mp.decoded;
-        LOG_INFO("Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
+        // LOG_INFO("Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
         uint16_t car_num = (p.payload.bytes[2] << 8) | p.payload.bytes[3];
         setFlagState(p.payload.bytes[0], car_num);
     }
@@ -88,20 +89,25 @@ int32_t EFlagsModule::runOnce()
 {
     if (BASE_STATION) // base station - sends flag commands
     {
-        NodeNum nodenum = 0x08ab5ecc;
+        // let's pick a random station
+        NodeNum nodenum = nodenums[(int)random(0, sizeof(nodenums) / sizeof(nodenums[0]) - 1)];
+
+        // let's pick a random flag state to command
+        flagState = random(1, 6);
+
         uint16_t car_number = UINT16_MAX;
 
-        if (firstTime) // first time we run, do setup stuff
+        if (firstTime) // first time we run, set all flags to none
         {
             firstTime = false;
             flagState = FLAG_NONE;
-            sendFlagCommand(nodenum, FLAG_NONE, UINT16_MAX);
+            sendFlagCommand(NODENUM_BROADCAST, FLAG_NONE, UINT16_MAX);
             LOG_INFO("Intialized Base Station");
         } else // typical function
         {
             switch (flagState) {
             case FLAG_NONE:
-                sendFlagCommand(NODENUM_BROADCAST, FLAG_NONE);
+                sendFlagCommand(nodenum, FLAG_NONE);
                 flagState = GREEN_FLAG;
                 break;
 
@@ -144,6 +150,7 @@ int32_t EFlagsModule::runOnce()
             setFlagState(FLAG_NONE, UINT16_MAX);
             firstTime = false;
         }
+        // LOG_INFO("runOnce() has been called in station client");
         return 0;
     }
 }
