@@ -12,7 +12,7 @@
 #define PIN 4
 
 #define DELAY_INTERVAL 4000 // Send a flag change command every 4 sec
-#define BASE_STATION 1      // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 0      // Flag stations only receive and respond to command. Only base unit sends commands
 
 EFlagsModule *eflagsModule;
 uint8_t flagState = 0;
