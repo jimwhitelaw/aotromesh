@@ -1,3 +1,4 @@
+#if HAS_WIFI
 #include "mesh/wifi/WiFiAPClient.h"
 #include "NodeDB.h"
 #include "RTC.h"
@@ -146,7 +147,6 @@ static int32_t reconnectWiFi()
 
             perhapsSetRTC(RTCQualityNTP, &tv);
             lastrun_ntp = millis();
-
         } else {
             LOG_DEBUG("NTP Update failed\n");
         }
@@ -406,3 +406,5 @@ uint8_t getWifiDisconnectReason()
 {
     return wifiDisconnectReason;
 }
+
+#endif

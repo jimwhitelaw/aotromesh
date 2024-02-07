@@ -1,3 +1,4 @@
+#if HAS_TELEMETRY
 #include "EnvironmentTelemetry.h"
 #include "../mesh/generated/meshtastic/telemetry.pb.h"
 #include "MeshService.h"
@@ -269,3 +270,5 @@ bool EnvironmentTelemetryModule::sendTelemetry(NodeNum dest, bool phoneOnly)
     }
     return valid;
 }
+
+#endif
