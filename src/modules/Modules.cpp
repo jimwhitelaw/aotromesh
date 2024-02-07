@@ -1,40 +1,21 @@
 #include "configuration.h"
+// #include "input/InputBroker.h"
+// #include "input/RotaryEncoderInterruptImpl1.h"
+// #include "input/TrackballInterruptImpl1.h"
+// #include "input/UpDownInterruptImpl1.h"
+// #include "input/cardKbI2cImpl.h"
+// #include "input/kbMatrixImpl.h"
 #include "modules/AdminModule.h"
-#include "modules/EFlagsModule/EFlagsModule.h"
-#include "modules/EFlagsModule/oledHelper.h"
+// #include "modules/CannedMessageModule.h"
+// #include "modules/DetectionSensorModule.h"
+#include "modules/EFlagsModule.h"
+// #include "modules/NeighborInfoModule.h"
 #include "modules/NodeInfoModule.h"
-#include "modules/RoutingModule.h"
-#include "modules/TextMessageModule.h"
-
-#if !MESHTASTIC_EXCLUDE_INPUTBROKER
-#include "input/InputBroker.h"
-#include "input/RotaryEncoderInterruptImpl1.h"
-#include "input/TrackballInterruptImpl1.h"
-#include "input/UpDownInterruptImpl1.h"
-#include "input/cardKbI2cImpl.h"
-#include "input/kbMatrixImpl.h"
-#endif
-
-#if !MESHTASTIC_EXCLUDE_ATAK
-#include "modules/AtakPluginModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_CANNEDMESSAGES
-#include "modules/CannedMessageModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
-#include "modules/DetectionSensorModule.h"
-#include "modules/EFlagsModule.h"
-#include "modules/NeighborInfoModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_GPS
-#include "modules/PositionModule.h"
-#endif
-#if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
-#include "modules/RemoteHardwareModule.h"
+// #include "modules/PositionModule.h"
+// #include "modules/RemoteHardwareModule.h"
 // #include "modules/ReplyModule.h"
-#include "modules/EFlagsModule.h"
 #include "modules/RoutingModule.h"
-#include "modules/TextMessageModule.h"
+// #include "modules/TextMessageModule.h"
 #include "modules/TraceRouteModule.h"
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
@@ -88,31 +69,19 @@ void setupModules()
         nodeInfoModule = new NodeInfoModule();
         textMessageModule = new TextMessageModule();
 #if !MESHTASTIC_EXCLUDE_GPS
-        positionModule = new PositionModule();
+        // positionModule = new PositionModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
         waypointModule = new WaypointModule();
-#endif
-#if !MESHTASTIC_EXCLUDE_TRACEROUTE
+        // textMessageModule = new TextMessageModule();
         traceRouteModule = new TraceRouteModule();
-#endif
-#if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
-        neighborInfoModule = new NeighborInfoModule();
-#endif
-#if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
-        detectionSensorModule = new DetectionSensorModule();
-#endif
-#if !MESHTASTIC_EXCLUDE_ATAK
-        atakPluginModule = new AtakPluginModule();
-#endif
-#if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
-        new RemoteHardwareModule();
-#endif
+        // neighborInfoModule = new NeighborInfoModule();
+        // detectionSensorModule = new DetectionSensorModule();
 
         // Note: if the rest of meshtastic doesn't need to explicitly use your module, you do not need to assign the instance
         // to a global variable.
 
-        new RemoteHardwareModule();
+        // new RemoteHardwareModule();
         // new ReplyModule();
         new EFlagsModule();
 #if HAS_BUTTON || ARCH_PORTDUINO
