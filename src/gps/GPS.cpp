@@ -6,6 +6,8 @@
 #include "sleep.h"
 #include "ubx.h"
 
+#if HAS_GPS
+
 #ifdef ARCH_PORTDUINO
 #include "PortduinoGlue.h"
 #include "meshUtils.h"
@@ -1432,3 +1434,5 @@ void GPS::toggleGpsMode()
         enable();
     }
 }
+
+#endif

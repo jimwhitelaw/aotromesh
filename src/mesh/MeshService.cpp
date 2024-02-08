@@ -72,9 +72,10 @@ void MeshService::init()
 {
     // moved much earlier in boot (called from setup())
     // nodeDB.init();
-
+#if HAS_GPS
     if (gps)
         gpsObserver.observe(&gps->newStatus);
+#endif
 }
 
 int MeshService::handleFromRadio(const meshtastic_MeshPacket *mp)
@@ -344,6 +345,7 @@ meshtastic_NodeInfoLite *MeshService::refreshLocalMeshNode()
     return node;
 }
 
+#if HAS_GPS
 int MeshService::onGPSChanged(const meshtastic::GPSStatus *newStatus)
 {
     // Update our local node info with our position (even if we don't decide to update anyone else)
@@ -377,7 +379,7 @@ int MeshService::onGPSChanged(const meshtastic::GPSStatus *newStatus)
 
     return 0;
 }
-
+#endif
 bool MeshService::isToPhoneQueueEmpty()
 {
     return toPhoneQueue.isEmpty();

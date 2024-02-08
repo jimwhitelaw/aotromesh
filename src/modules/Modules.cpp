@@ -41,7 +41,9 @@
 #endif
 #if defined(ARCH_ESP32) || defined(ARCH_NRF52) || defined(ARCH_RP2040)
 #include "modules/ExternalNotificationModule.h"
+#if HAS_GPS
 #include "modules/RangeTestModule.h"
+#endif
 #if (defined(ARCH_ESP32) || defined(ARCH_NRF52) || defined(ARCH_RP2040)) && !defined(CONFIG_IDF_TARGET_ESP32S2)
 #include "modules/SerialModule.h"
 #endif

@@ -631,15 +631,18 @@ void setup()
     readFromRTC(); // read the main CPU RTC at first (in case we can't get GPS time)
 
     // If we're taking on the repeater role, ignore GPS
-    if (config.device.role != meshtastic_Config_DeviceConfig_Role_REPEATER &&
-        config.position.gps_mode != meshtastic_Config_PositionConfig_GpsMode_NOT_PRESENT) {
-        gps = GPS::createGps();
+    if (HAS_GPS) {
+        if (config.device.role != meshtastic_Config_DeviceConfig_Role_REPEATER &&
+            config.position.gps_mode != meshtastic_Config_PositionConfig_GpsMode_NOT_PRESENT) {
+            gps = GPS::createGps();
+            if (gps) {
+                gpsStatus->observe(&gps->newStatus);
+            } else {
+                LOG_DEBUG("Running without GPS.\n");
+            }
+        }
     }
-    if (gps) {
-        gpsStatus->observe(&gps->newStatus);
-    } else {
-        LOG_DEBUG("Running without GPS.\n");
-    }
+
     nodeStatus->observe(&nodeDB.newStatus);
 
 #ifdef HAS_I2S
@@ -851,7 +854,7 @@ void setup()
 #endif
 #endif
 
-#ifdef ARCH_ESP32
+#if defined(ARCH_ESP32) && HAS_WIFI
     // Start web server thread.
     webServerThread = new WebServerThread();
 #endif

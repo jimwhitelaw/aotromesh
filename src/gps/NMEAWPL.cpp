@@ -3,6 +3,8 @@
 #include "RTC.h"
 #include <time.h>
 
+#if HAS_GPS
+
 /* -------------------------------------------
  *        1       2 3        4 5    6
  *        |       | |        | |    |
@@ -94,3 +96,5 @@ uint32_t printGGA(char *buf, size_t bufsz, const meshtastic_Position &pos)
     len += snprintf(buf + len, bufsz - len, "*%02X\r\n", chk);
     return len;
 }
+
+#endif
