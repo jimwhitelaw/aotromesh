@@ -11,6 +11,8 @@
 
 #if HAS_GPS
 
+#if HAS_GPS
+
 #ifdef ARCH_PORTDUINO
 #include "PortduinoGlue.h"
 #include "meshUtils.h"
