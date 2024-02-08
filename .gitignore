@@ -49,15 +49,3 @@ data/static/robots.txt.gz
 data/static/site.webmanifest.gz
 .vscode/settings.jsonsrc/mesh/raspihttp/certificate.pem
 src/mesh/raspihttp/private_key.pemdownload_fs.py
-data/static/apple-touch-icon.png.gz
-data/static/favicon.ico.gz
-data/static/icon.svg.gz
-data/static/index-0AMga6GL.js.gz
-data/static/index-H3yz6dTg.js.gz
-data/static/index-SK2yn6IJ.css.gz
-data/static/index.html.gz
-data/static/Logo_Black.svg.gz
-data/static/Logo_White.svg.gz
-data/static/maplibre-gl-bXi9LezG.js.gz
-data/static/robots.txt.gz
-data/static/site.webmanifest.gz
