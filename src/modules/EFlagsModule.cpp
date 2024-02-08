@@ -80,7 +80,10 @@ ProcessMessage EFlagsModule::handleReceived(const meshtastic_MeshPacket &mp)
         auto &p = mp.decoded;
         // LOG_INFO("Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
         uint16_t car_num = (p.payload.bytes[2] << 8) | p.payload.bytes[3];
+        LOG_INFO("Received flag command %d\n", p.payload.bytes[0]);
+        unsigned long flagStateTimer = micros();
         setFlagState(p.payload.bytes[0], car_num);
+        LOG_INFO("Flagstate change took %fus\n", micros() - flagStateTimer);
     }
     return ProcessMessage::STOP;
 }
