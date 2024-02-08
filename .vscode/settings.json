@@ -3,5 +3,10 @@
   "editor.defaultFormatter": "trunk.io",
   "trunk.enableWindows": true,
   "files.insertFinalNewline": false,
-  "files.trimFinalNewlines": false
+  "files.trimFinalNewlines": false,
+  "files.associations": {
+    "*.h": "cpp",
+    "string": "cpp",
+    "ctime": "cpp"
+  }
 }
