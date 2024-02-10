@@ -1,4 +1,3 @@
-#if HAS_WIFI
 #include "mesh/wifi/WiFiAPClient.h"
 #include "NodeDB.h"
 #include "RTC.h"
@@ -406,5 +405,3 @@ uint8_t getWifiDisconnectReason()
 {
     return wifiDisconnectReason;
 }
-
-#endif
