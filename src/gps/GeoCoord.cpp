@@ -1,5 +1,3 @@
-#if HAS_GPS
-
 #include "GeoCoord.h"
 
 GeoCoord::GeoCoord()
@@ -488,5 +486,3 @@ std::shared_ptr<GeoCoord> GeoCoord::pointAtDistance(double bearing, double range
 
     return std::make_shared<GeoCoord>(double(lat), double(lon), this->getAltitude());
 }
-
-#endif
