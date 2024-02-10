@@ -31,3 +31,4 @@ venv/
 release/
 .vscode/extensions.json
 /compile_commands.json
+data/*
