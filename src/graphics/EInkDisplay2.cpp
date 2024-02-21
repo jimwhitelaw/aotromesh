@@ -381,8 +381,8 @@ void EInkDisplay::demandFullRefresh()
     demandingFull = true;
 }
 
-// configure display for fast-refresh
-void EInkDisplay::configForFastRefresh()
+// configure display for partial-refresh
+void EInkDisplay::configForPartialRefresh()
 {
     // Display-specific code can go here
 #if defined(PRIVATE_HW)
@@ -403,7 +403,7 @@ void EInkDisplay::configForFullRefresh()
 #endif
 }
 
-#ifdef EINK_FASTREFRESH_ERASURE_LIMIT
+#ifdef EINK_PARTIAL_ERASURE_LIMIT
 // Count black pixels in an image. Used for "erasure tracking"
 int32_t EInkDisplay::countBlackPixels()
 {
@@ -437,16 +437,16 @@ bool EInkDisplay::tooManyErasures()
     prevBlackCount = blackCount;
 
     // Log the running total - help devs setup new boards
-    LOG_DEBUG("Dynamic Refresh: erasedSinceFull=%hu, EINK_FASTREFRESH_ERASURE_LIMIT=%hu\n", erasedSinceFull,
-              EINK_FASTREFRESH_ERASURE_LIMIT);
+    LOG_DEBUG("Dynamic Partial: erasedSinceFull=%hu, EINK_PARTIAL_ERASURE_LIMIT=%hu\n", erasedSinceFull,
+              EINK_PARTIAL_ERASURE_LIMIT);
 
     // Check if too many pixels have been erased
-    if (erasedSinceFull > EINK_FASTREFRESH_ERASURE_LIMIT)
+    if (erasedSinceFull > EINK_PARTIAL_ERASURE_LIMIT)
         return true; // Too many
     else
         return false; // Still okay
 }
-#endif // ifdef EINK_FASTREFRESH_ERASURE_LIMIT
+#endif // ifdef EINK_PARTIAL_BRIGHTEN_LIMIT_PX
 
 bool EInkDisplay::newImageMatchesOld()
 {
@@ -483,77 +483,82 @@ bool EInkDisplay::determineRefreshMode()
     }
 
     // Abort: if too soon for a new frame (unless demanding full)
-    if (!demandingFull && isHighPriority && fastRefreshCount > 0 && sinceLast < highPriorityLimitMsec)
+    if (!demandingFull && isHighPriority && partialRefreshCount > 0 && sinceLast < highPriorityLimitMsec)
     {
-        LOG_DEBUG("Dynamic Refresh: update skipped. Exceeded EINK_HIGHPRIORITY_LIMIT_SECONDS\n");
+        LOG_DEBUG("Dynamic Partial: update skipped. Exceeded EINK_HIGHPRIORITY_LIMIT_SECONDS\n");
         missedHighPriorityUpdate = true;
         return false;
     }
     if (!demandingFull && !isHighPriority && !demandingFull && sinceLast < lowPriorityLimitMsec)
     {
-        return false;
-    }
+        if (!demandingFull && !isHighPriority && !demandingFull && sinceLast < lowPriorityLimitMsec)
+        {
+            return false;
+        }
 
-    // If demanded full refresh: give it to them
-    if (demandingFull)
-        needsFull = true;
+        // If demanded full refresh: give it to them
+        if (demandingFull)
+            needsFull = true;
 
-    // Check if old image (fast-refresh) should be redrawn (as full), for image quality
-    if (fastRefreshCount > 0 && !isHighPriority)
-        needsFull = true;
+        // Check if old image (partial) should be redrawn (as full), for image quality
+        if (partialRefreshCount > 0 && !isHighPriority)
+            needsFull = true;
 
-    // If too many fast updates, require a full-refresh (display health)
-    if (fastRefreshCount >= fastRefreshLimit)
-        needsFull = true;
+        // If too many partials, require a full-refresh (display health)
+        if (partialRefreshCount >= partialRefreshLimit)
+            needsFull = true;
 
-#ifdef EINK_FASTREFRESH_ERASURE_LIMIT
-    // Some displays struggle with erasing black pixels to white, during fast-refresh
-    if (tooManyErasures())
-        needsFull = true;
+#ifdef EINK_PARTIAL_ERASURE_LIMIT
+        // Some displays struggle with erasing black pixels to white, during partial refresh
+        if (tooManyErasures())
+            needsFull = true;
 #endif
 
-    // If image matches
-    // (Block must run, even if full already selected, to store hash for next time)
-    if (newImageMatchesOld())
-    {
-        // If low priority: limit rate
-        // otherwise, every loop() will run the hash method
-        if (!isHighPriority)
-            lastUpdateMsec = now;
+        // If image matches
+        // (Block must run, even if full already selected, to store hash for next time)
+        if (newImageMatchesOld())
+        {
+            // (Block must run, even if full already selected, to store hash for next time)
+            if (newImageMatchesOld())
+            {
+                // If low priority: limit rate
+                // otherwise, every loop() will run the hash method
+                if (!isHighPriority)
+                    lastUpdateMsec = now;
 
-        // If update is *not* for display health or image quality, skip it
-        if (!needsFull)
-            return false;
-    }
+                // If update is *not* for display health or image quality, skip it
+                if (!needsFull)
+                    return false;
+            }
 
-    // Conditions assessed - not skipping - load the appropriate config
+            // Conditions assessed - not skipping - load the appropriate config
 
-    // If options require a full refresh
-    if (!isHighPriority || needsFull)
-    {
-        if (fastRefreshCount > 0)
-            configForFullRefresh();
+            // If options require a full refresh
+            if (!isHighPriority || needsFull)
+            {
+                if (fastRefreshCount > 0)
+                    configForFullRefresh();
 
-        LOG_DEBUG("Dynamic Refresh: conditions met for full-refresh\n");
-        fastRefreshCount = 0;
-        needsFull = false;
-        demandingFull = false;
-        erasedSinceFull = 0; // Reset the count for EINK_FASTREFRESH_ERASURE_LIMIT - tracks ghosting buildup
-    }
+                LOG_DEBUG("Dynamic Partial: conditions met for full-refresh\n");
+                partialRefreshCount = 0;
+                needsFull = false;
+                demandingFull = false;
+                erasedSinceFull = 0; // Reset the count for EINK_PARTIAL_ERASURE_LIMIT - tracks ghosting buildup
+            }
 
-    // If options allow a fast-refresh
-    else
-    {
-        if (fastRefreshCount == 0)
-            configForFastRefresh();
+            // If options allow a fast-refresh
+            else
+            {
+                if (fastRefreshCount == 0)
+                    configForFastRefresh();
 
-        LOG_DEBUG("Dynamic Refresh: conditions met for fast-refresh\n");
-        fastRefreshCount++;
-    }
+                LOG_DEBUG("Dynamic Partial: conditions met for partial-refresh\n");
+                partialRefreshCount++;
+            }
 
-    lastUpdateMsec = now; // Mark time for rate limiting
-    return true;          // Instruct calling method to continue with update
-}
+            lastUpdateMsec = now; // Mark time for rate limiting
+            return true;          // Instruct calling method to continue with update
+        }
 
 #endif // End USE_EINK_DYNAMIC_REFRESH
 
