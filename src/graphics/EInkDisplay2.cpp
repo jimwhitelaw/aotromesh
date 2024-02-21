@@ -115,6 +115,12 @@ EInkDisplay::EInkDisplay(uint8_t address, int sda, int scl, OLEDDISPLAY_GEOMETRY
     setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
     LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
 
+#elif defined(ESP32_S3_PICO)
+
+    // GxEPD2_290_T94_V2
+    setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
+    LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
+
 #endif
     // setGeometry(GEOMETRY_RAWMODE, 128, 64); // old resolution
     // setGeometry(GEOMETRY_128_64); // We originally used this because I wasn't sure if rawmode worked - it does
@@ -150,8 +156,10 @@ bool EInkDisplay::forceDisplay(uint32_t msecLimit)
 
     // FIXME - only draw bits have changed (use backbuf similar to the other displays)
     // tft.drawBitmap(0, 0, buffer, 128, 64, TFT_YELLOW, TFT_BLACK);
-    for (uint32_t y = 0; y < displayHeight; y++) {
-        for (uint32_t x = 0; x < displayWidth; x++) {
+    for (uint32_t y = 0; y < displayHeight; y++)
+    {
+        for (uint32_t x = 0; x < displayWidth; x++)
+        {
             // get src pixel in the page based ordering the OLED lib uses FIXME, super inefficient
             auto b = buffer[x + (y / 8) * displayWidth];
             auto isset = b & (1 << (y & 7));
@@ -208,7 +216,8 @@ void EInkDisplay::display(void)
     forceDisplay();
     highPriority();
 #else
-    if (lastDrawMsec) {
+    if (lastDrawMsec)
+    {
         forceDisplay(slowUpdateMsec); // Show the first screen a few seconds after boot, then slower
     }
 #endif
@@ -253,16 +262,19 @@ bool EInkDisplay::connect()
     }
 #elif defined(RAK4630) || defined(MAKERPYTHON)
     {
-        if (eink_found) {
+        if (eink_found)
+        {
             auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
             adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
             adafruitDisplay->init(115200, true, 10, false, SPI1, SPISettings(4000000, MSBFIRST, SPI_MODE0));
-            // RAK14000 2.13 inch b/w 250x122 does actually now support fast refresh
+            // RAK14000 2.13 inch b/w 250x122 does actually now support partial updates
             adafruitDisplay->setRotation(3);
             // Fast refresh support for  1.54, 2.13 RAK14000 b/w , 2.9 and 4.2
             // adafruitDisplay->setRotation(1);
             adafruitDisplay->setPartialWindow(0, 0, displayWidth, displayHeight);
-        } else {
+        }
+        else
+        {
             (void)adafruitDisplay;
         }
     }
@@ -274,7 +286,8 @@ bool EInkDisplay::connect()
 
         // If waking from sleep, need to reverse rtc_gpio_isolate(), called in cpuDeepSleep()
         // Otherwise, SPI won't work
-        if (wakeReason != ESP_SLEEP_WAKEUP_UNDEFINED) {
+        if (wakeReason != ESP_SLEEP_WAKEUP_UNDEFINED)
+        {
             // HSPI + other display pins
             rtc_gpio_hold_dis((gpio_num_t)PIN_EINK_SCLK);
             rtc_gpio_hold_dis((gpio_num_t)PIN_EINK_DC);
@@ -395,8 +408,10 @@ void EInkDisplay::configForFullRefresh()
 int32_t EInkDisplay::countBlackPixels()
 {
     int32_t blackCount = 0; // Signed, to avoid underflow when comparing
-    for (uint16_t b = 0; b < (displayWidth / 8) * displayHeight; b++) {
-        for (uint8_t i = 0; i < 7; i++) {
+    for (uint16_t b = 0; b < (displayWidth / 8) * displayHeight; b++)
+    {
+        for (uint8_t i = 0; i < 7; i++)
+        {
             // Check if each bit is black or white
             blackCount += (buffer[b] >> i) & 1;
         }
@@ -438,7 +453,8 @@ bool EInkDisplay::newImageMatchesOld()
     uint32_t newImageHash = 0;
 
     // Generate hash: sum all bytes in the image buffer
-    for (uint16_t b = 0; b < (displayWidth / 8) * displayHeight; b++) {
+    for (uint16_t b = 0; b < (displayWidth / 8) * displayHeight; b++)
+    {
         newImageHash += buffer[b];
     }
 
@@ -460,18 +476,21 @@ bool EInkDisplay::determineRefreshMode()
 
     // If rate-limiting dropped a high-priority update:
     // promote this update, so it runs ASAP
-    if (missedHighPriorityUpdate) {
+    if (missedHighPriorityUpdate)
+    {
         isHighPriority = true;
         missedHighPriorityUpdate = false;
     }
 
     // Abort: if too soon for a new frame (unless demanding full)
-    if (!demandingFull && isHighPriority && fastRefreshCount > 0 && sinceLast < highPriorityLimitMsec) {
+    if (!demandingFull && isHighPriority && fastRefreshCount > 0 && sinceLast < highPriorityLimitMsec)
+    {
         LOG_DEBUG("Dynamic Refresh: update skipped. Exceeded EINK_HIGHPRIORITY_LIMIT_SECONDS\n");
         missedHighPriorityUpdate = true;
         return false;
     }
-    if (!demandingFull && !isHighPriority && !demandingFull && sinceLast < lowPriorityLimitMsec) {
+    if (!demandingFull && !isHighPriority && !demandingFull && sinceLast < lowPriorityLimitMsec)
+    {
         return false;
     }
 
@@ -495,7 +514,8 @@ bool EInkDisplay::determineRefreshMode()
 
     // If image matches
     // (Block must run, even if full already selected, to store hash for next time)
-    if (newImageMatchesOld()) {
+    if (newImageMatchesOld())
+    {
         // If low priority: limit rate
         // otherwise, every loop() will run the hash method
         if (!isHighPriority)
@@ -509,7 +529,8 @@ bool EInkDisplay::determineRefreshMode()
     // Conditions assessed - not skipping - load the appropriate config
 
     // If options require a full refresh
-    if (!isHighPriority || needsFull) {
+    if (!isHighPriority || needsFull)
+    {
         if (fastRefreshCount > 0)
             configForFullRefresh();
 
@@ -521,7 +542,8 @@ bool EInkDisplay::determineRefreshMode()
     }
 
     // If options allow a fast-refresh
-    else {
+    else
+    {
         if (fastRefreshCount == 0)
             configForFastRefresh();
 
