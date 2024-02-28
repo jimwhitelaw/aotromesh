@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef USE_EINK
+
+#include "GxEPD2_BW.h"
 #include <OLEDDisplay.h>
 
 #if defined(HELTEC_WIRELESS_PAPER_V1_0)
@@ -16,6 +19,7 @@
  * Use the fast NRF52 SPI API rather than the slow standard arduino version
  *
  * turn radio back on - currently with both on spi bus is fucked? or are we leaving chip select asserted?
+ * Suggestion: perhaps similar to HELTEC_WIRELESS_PAPER issue, which resolved with rtc_gpio_hold_dis()
  */
 class EInkDisplay : public OLEDDisplay
 {
@@ -55,6 +59,12 @@ protected:
     // Connect to the display
     virtual bool connect() override;
 
+    // AdafruitGFX display object - instantiated in connect(), variant specific
+    GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT> *adafruitDisplay = NULL;
+
+    // If display uses HSPI
+#if defined(HELTEC_WIRELESS_PAPER) || defined(HELTEC_WIRELESS_PAPER_V1_0)
+    SPIClass *hspi = NULL;
 #if defined(USE_EINK_DYNAMIC_REFRESH)
     // Full, fast, or skip: balance urgency with display health
 

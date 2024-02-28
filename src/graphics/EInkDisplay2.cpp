@@ -2,128 +2,90 @@
 
 #ifdef USE_EINK
 #include "EInkDisplay2.h"
-#include "GxEPD2_BW.h"
 #include "SPILock.h"
 #include "main.h"
 #include <SPI.h>
 
-#if defined(HELTEC_WIRELESS_PAPER) || defined(HELTEC_WIRELESS_PAPER_V1_0)
-SPIClass *hspi = NULL;
-#endif
+/*
+    The macros EINK_DISPLAY_MODEL, EINK_WIDTH, and EINK_HEIGHT are defined as build_flags in a variant's platformio.ini
+    Previously, these macros were defined at the top of this file.
 
-#define COLORED GxEPD_BLACK
-#define UNCOLORED GxEPD_WHITE
+    For archival reasons, note that the following configurations had also been tested during this period:
+    * ifdef RAK4631
+        - 4.2 inch
+          EINK_DISPLAY_MODEL: GxEPD2_420_M01
+          EINK_WIDTH: 300
+          EINK_WIDTH: 400
 
-#if defined(TTGO_T_ECHO)
-#define TECHO_DISPLAY_MODEL GxEPD2_154_D67
-#elif defined(RAK4630)
+        - 2.9 inch
+          EINK_DISPLAY_MODEL: GxEPD2_290_T5D
+          EINK_WIDTH: 296
+          EINK_HEIGHT: 128
 
-// GxEPD2_213_BN - RAK14000 2.13 inch b/w 250x122 - changed from GxEPD2_213_B74 - which was not going to give fast refresh
-// support
-#define TECHO_DISPLAY_MODEL GxEPD2_213_BN
+        - 1.54 inch
+          EINK_DISPLAY_MODEL: GxEPD2_154_M09
+          EINK_WIDTH: 200
+          EINK_HEIGHT: 200
+*/
 
-// 4.2 inch 300x400 - GxEPD2_420_M01
-// #define TECHO_DISPLAY_MODEL GxEPD2_420_M01
-
-// 2.9 inch 296x128 - GxEPD2_290_T5D
-// #define TECHO_DISPLAY_MODEL GxEPD2_290_T5D
-
-// 1.54 inch 200x200 - GxEPD2_154_M09
-// #define TECHO_DISPLAY_MODEL GxEPD2_154_M09
-
-#elif defined(MAKERPYTHON)
-// 2.9 inch 296x128 - GxEPD2_290_T5D
-#define TECHO_DISPLAY_MODEL GxEPD2_290_T5D
-
-#elif defined(PCA10059)
-
-// 4.2 inch 300x400 - GxEPD2_420_M01
-#define TECHO_DISPLAY_MODEL GxEPD2_420_M01
-
-#elif defined(M5_COREINK)
-// M5Stack CoreInk
-// 1.54 inch 200x200 - GxEPD2_154_M09
-#define TECHO_DISPLAY_MODEL GxEPD2_154_M09
-
-#elif defined(HELTEC_WIRELESS_PAPER)
-// #define TECHO_DISPLAY_MODEL GxEPD2_213_T5D
-#define TECHO_DISPLAY_MODEL GxEPD2_213_FC1
-
-#elif defined(HELTEC_WIRELESS_PAPER_V1_0)
-// 2.13" 122x250 - DEPG0213BNS800
-#define TECHO_DISPLAY_MODEL GxEPD2_213_BN
-
-#endif
-
-GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT> *adafruitDisplay;
-
+// Constructor
 EInkDisplay::EInkDisplay(uint8_t address, int sda, int scl, OLEDDISPLAY_GEOMETRY geometry, HW_I2C i2cBus)
 {
-#if defined(TTGO_T_ECHO)
-    setGeometry(GEOMETRY_RAWMODE, 200, 200);
-#elif defined(RAK4630)
-
-    // GxEPD2_213_BN - RAK14000 2.13 inch b/w 250x122
-    setGeometry(GEOMETRY_RAWMODE, 250, 122);
-    this->displayBufferSize = 250 * (128 / 8);
-    // GxEPD2_420_M01
-    // setGeometry(GEOMETRY_RAWMODE, 300, 400);
-
-    // GxEPD2_290_T5D
-    // setGeometry(GEOMETRY_RAWMODE, 296, 128);
-
-    // GxEPD2_154_M09
-    // setGeometry(GEOMETRY_RAWMODE, 200, 200);
-
-#elif defined(HELTEC_WIRELESS_PAPER_V1_0)
-
-    // The display's memory is actually 128px x 250px
-    // Setting the buffersize manually prevents 122/8 truncating to a 15 byte width
-    // (Or something like that..)
-
+    // Set dimensions in OLEDDisplay base class
     this->geometry = GEOMETRY_RAWMODE;
-    this->displayWidth = 250;
-    this->displayHeight = 122;
-    this->displayBufferSize = 250 * (128 / 8);
+    this->displayWidth = EINK_WIDTH;
+    this->displayHeight = EINK_HEIGHT;
+
+    // Round shortest side up to nearest byte, to prevent truncation causing an undersized buffer
+    uint16_t shortSide = min(EINK_WIDTH, EINK_HEIGHT);
+    uint16_t longSide = max(EINK_WIDTH, EINK_HEIGHT);
+    if (shortSide % 8 != 0)
+        shortSide = (shortSide | 7) + 1;
+
+    this->displayBufferSize = longSide * (shortSide / 8);
+}
+this->displayWidth = 250;
+this->displayHeight = 122;
+this->displayBufferSize = 250 * (128 / 8);
 
 #elif defined(HELTEC_WIRELESS_PAPER)
-    // GxEPD2_213_BN - 2.13 inch b/w 250x122
-    setGeometry(GEOMETRY_RAWMODE, 250, 122);
+// GxEPD2_213_BN - 2.13 inch b/w 250x122
+setGeometry(GEOMETRY_RAWMODE, 250, 122);
 #elif defined(MAKERPYTHON)
-    // GxEPD2_290_T5D
-    setGeometry(GEOMETRY_RAWMODE, 296, 128);
+// GxEPD2_290_T5D
+setGeometry(GEOMETRY_RAWMODE, 296, 128);
 
 #elif defined(PCA10059)
 
-    // GxEPD2_420_M01
-    setGeometry(GEOMETRY_RAWMODE, 300, 400);
+// GxEPD2_420_M01
+setGeometry(GEOMETRY_RAWMODE, 300, 400);
 
 #elif defined(M5_COREINK)
 
-    // M5Stack_CoreInk 200x200
-    // 1.54 inch 200x200 - GxEPD2_154_M09
-    setGeometry(GEOMETRY_RAWMODE, EPD_HEIGHT, EPD_WIDTH);
+// M5Stack_CoreInk 200x200
+// 1.54 inch 200x200 - GxEPD2_154_M09
+setGeometry(GEOMETRY_RAWMODE, EPD_HEIGHT, EPD_WIDTH);
 #elif defined(my)
 
-    // GxEPD2_290_T5D
-    setGeometry(GEOMETRY_RAWMODE, 296, 128);
-    LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
+// GxEPD2_290_T5D
+setGeometry(GEOMETRY_RAWMODE, 296, 128);
+LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
 
 #elif defined(ESP32_S3_PICO)
 
-    // GxEPD2_290_T94_V2
-    setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
-    LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
+// GxEPD2_290_T94_V2
+setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
+LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
 
 #elif defined(ESP32_S3_PICO)
 
-    // GxEPD2_290_T94_V2
-    setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
-    LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
+// GxEPD2_290_T94_V2
+setGeometry(GEOMETRY_RAWMODE, EPD_WIDTH, EPD_HEIGHT);
+LOG_DEBUG("GEOMETRY_RAWMODE, 296, 128\n");
 
 #endif
-    // setGeometry(GEOMETRY_RAWMODE, 128, 64); // old resolution
-    // setGeometry(GEOMETRY_128_64); // We originally used this because I wasn't sure if rawmode worked - it does
+// setGeometry(GEOMETRY_RAWMODE, 128, 64); // old resolution
+// setGeometry(GEOMETRY_128_64); // We originally used this because I wasn't sure if rawmode worked - it does
 }
 
 // FIXME quick hack to limit drawing to a very slow rate
@@ -137,13 +99,6 @@ bool EInkDisplay::forceDisplay(uint32_t msecLimit)
     // No need to grab this lock because we are on our own SPI bus
     // concurrency::LockGuard g(spiLock);
 
-#if defined(USE_EINK_DYNAMIC_REFRESH)
-    // Decide between full refresh, fast refresh, or skipping the update
-    bool continueUpdate = determineRefreshMode();
-    if (!continueUpdate)
-        return false;
-#else
-
     uint32_t now = millis();
     uint32_t sinceLast = now - lastDrawMsec;
 
@@ -152,10 +107,7 @@ bool EInkDisplay::forceDisplay(uint32_t msecLimit)
     else
         return false;
 
-#endif
-
     // FIXME - only draw bits have changed (use backbuf similar to the other displays)
-    // tft.drawBitmap(0, 0, buffer, 128, 64, TFT_YELLOW, TFT_BLACK);
     for (uint32_t y = 0; y < displayHeight; y++)
     {
         for (uint32_t x = 0; x < displayWidth; x++)
@@ -163,43 +115,28 @@ bool EInkDisplay::forceDisplay(uint32_t msecLimit)
             // get src pixel in the page based ordering the OLED lib uses FIXME, super inefficient
             auto b = buffer[x + (y / 8) * displayWidth];
             auto isset = b & (1 << (y & 7));
-            adafruitDisplay->drawPixel(x, y, isset ? COLORED : UNCOLORED);
+            adafruitDisplay->drawPixel(x, y, isset ? GxEPD_BLACK : GxEPD_WHITE);
         }
     }
 
     LOG_DEBUG("Updating E-Paper... ");
 
-#if defined(TTGO_T_ECHO)
-    adafruitDisplay->nextPage();
-#elif defined(RAK4630) || defined(MAKERPYTHON)
-
-    // RAK14000 2.13 inch b/w 250x122 actually now does support fast refresh
+#if false
+    // Currently unused; rescued from commented-out line during a refactor
+    // Use a meaningful macro here if variant doesn't want fast refresh
 
     // Full update mode (slow)
-    // adafruitDisplay->display(false); // FIXME, use fast refresh mode
-
-    // Only enable for e-Paper with support for fast updates and comment out above adafruitDisplay->display(false);
-    //  1.54 inch 200x200 - GxEPD2_154_M09
-    //  2.13 inch 250x122 - GxEPD2_213_BN
-    //  2.9 inch 296x128 - GxEPD2_290_T5D
-    //  4.2 inch 300x400 - GxEPD2_420_M01
-    adafruitDisplay->nextPage();
-
-#elif defined(PCA10059) || defined(M5_COREINK)
-    adafruitDisplay->nextPage();
-#elif defined(HELTEC_WIRELESS_PAPER_V1_0)
-    adafruitDisplay->nextPage();
-#elif defined(HELTEC_WIRELESS_PAPER)
-    adafruitDisplay->nextPage();
-#elif defined(ESP32_S3_PICO)
-    adafruitDisplay->nextPage();
-#elif defined(PRIVATE_HW) || defined(my)
+    adafruitDisplay->display(false)
+#else
+    // Fast update mode
     adafruitDisplay->nextPage();
 #endif
 
+#ifndef EINK_NO_HIBERNATE // Only hibernate if controller IC will preserve image memory
     // Put screen to sleep to save power (possibly not necessary because we already did poweroff inside of display)
     adafruitDisplay->hibernate();
     LOG_DEBUG("done\n");
+#endif
 
     return true;
 }
@@ -211,16 +148,10 @@ void EInkDisplay::display(void)
     // at least one forceDisplay() keyframe.  This prevents flashing when we should the critical
     // bootscreen (that we want to look nice)
 
-#ifdef USE_EINK_DYNAMIC_REFRESH
-    lowPriority();
-    forceDisplay();
-    highPriority();
-#else
     if (lastDrawMsec)
     {
         forceDisplay(slowUpdateMsec); // Show the first screen a few seconds after boot, then slower
     }
-#endif
 }
 
 // Send a command to the display (low level function)
@@ -235,7 +166,7 @@ void EInkDisplay::setDetected(uint8_t detected)
     (void)detected;
 }
 
-// Connect to the display
+// Connect to the display - variant specific
 bool EInkDisplay::connect()
 {
     LOG_INFO("Doing EInk init\n");
@@ -253,9 +184,9 @@ bool EInkDisplay::connect()
 
 #if defined(TTGO_T_ECHO)
     {
-        auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, SPI1);
+        auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, SPI1);
 
-        adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+        adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
         adafruitDisplay->init();
         adafruitDisplay->setRotation(3);
         adafruitDisplay->setPartialWindow(0, 0, displayWidth, displayHeight);
@@ -264,8 +195,8 @@ bool EInkDisplay::connect()
     {
         if (eink_found)
         {
-            auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
-            adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+            auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
+            adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
             adafruitDisplay->init(115200, true, 10, false, SPI1, SPISettings(4000000, MSBFIRST, SPI_MODE0));
             // RAK14000 2.13 inch b/w 250x122 does actually now support partial updates
             adafruitDisplay->setRotation(3);
@@ -309,8 +240,8 @@ bool EInkDisplay::connect()
         delay(100);
 
         // Create GxEPD2 objects
-        auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, *hspi);
-        adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+        auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, *hspi);
+        adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
 
         // Init GxEPD2
         adafruitDisplay->init();
@@ -324,39 +255,35 @@ bool EInkDisplay::connect()
         pinMode(Vext, OUTPUT);
         digitalWrite(Vext, LOW);
         delay(100);
-        auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, *hspi);
-        adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+        auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY, *hspi);
+        adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
         adafruitDisplay->init();
         adafruitDisplay->setRotation(3);
     }
 #elif defined(PCA10059)
     {
-        auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
-        adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+        auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
+        adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
         adafruitDisplay->init(115200, true, 10, false, SPI1, SPISettings(4000000, MSBFIRST, SPI_MODE0));
         adafruitDisplay->setRotation(3);
         adafruitDisplay->setPartialWindow(0, 0, displayWidth, displayHeight);
     }
 #elif defined(M5_COREINK)
-    auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
-    adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+    auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
+    adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
     adafruitDisplay->init(115200, true, 40, false, SPI, SPISettings(4000000, MSBFIRST, SPI_MODE0));
     adafruitDisplay->setRotation(0);
-    adafruitDisplay->setPartialWindow(0, 0, EPD_WIDTH, EPD_HEIGHT);
+    adafruitDisplay->setPartialWindow(0, 0, EINK_WIDTH, EINK_HEIGHT);
 #elif defined(my) || defined(ESP32_S3_PICO)
     {
-        auto lowLevel = new TECHO_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
-        adafruitDisplay = new GxEPD2_BW<TECHO_DISPLAY_MODEL, TECHO_DISPLAY_MODEL::HEIGHT>(*lowLevel);
+        auto lowLevel = new EINK_DISPLAY_MODEL(PIN_EINK_CS, PIN_EINK_DC, PIN_EINK_RES, PIN_EINK_BUSY);
+        adafruitDisplay = new GxEPD2_BW<EINK_DISPLAY_MODEL, EINK_DISPLAY_MODEL::HEIGHT>(*lowLevel);
         adafruitDisplay->init(115200, true, 40, false, SPI, SPISettings(4000000, MSBFIRST, SPI_MODE0));
         adafruitDisplay->setRotation(1);
-        adafruitDisplay->setPartialWindow(0, 0, EPD_WIDTH, EPD_HEIGHT);
+        adafruitDisplay->setPartialWindow(0, 0, EINK_WIDTH, EINK_HEIGHT);
     }
 #endif
 
-    // adafruitDisplay->setFullWindow();
-    // adafruitDisplay->fillScreen(UNCOLORED);
-    // adafruitDisplay->drawCircle(100, 100, 20, COLORED);
-    // adafruitDisplay->display(false);
     return true;
 }
 
