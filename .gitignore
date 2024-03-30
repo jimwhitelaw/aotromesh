@@ -47,4 +47,5 @@ data/static/Logo_White.svg.gz
 data/static/maplibre-gl-bXi9LezG.js.gz
 data/static/robots.txt.gz
 data/static/site.webmanifest.gz
-.vscode/settings.json
+.vscode/settings.jsonsrc/mesh/raspihttp/certificate.pem
+src/mesh/raspihttp/private_key.pem

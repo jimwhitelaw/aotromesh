@@ -1,4 +1,6 @@
+#if !MESHTASTIC_EXCLUDE_GPS
 #include "PositionModule.h"
+#include "Default.h"
 #include "GPS.h"
 #include "MeshService.h"
 #include "NodeDB.h"
@@ -33,19 +35,9 @@ PositionModule::PositionModule()
     if ((config.device.role == meshtastic_Config_DeviceConfig_Role_TRACKER ||
          config.device.role == meshtastic_Config_DeviceConfig_Role_TAK_TRACKER) &&
         config.power.is_power_saving) {
-        clearPosition();
+        LOG_DEBUG("Clearing position on startup for sleepy tracker (ー。ー) zzz\n");
+        nodeDB->clearLocalPosition();
     }
-}
-
-void PositionModule::clearPosition()
-{
-    LOG_DEBUG("Clearing position on startup for sleepy tracker (ー。ー) zzz\n");
-    meshtastic_NodeInfoLite *node = nodeDB.getMeshNode(nodeDB.getNodeNum());
-    node->position.latitude_i = 0;
-    node->position.longitude_i = 0;
-    node->position.altitude = 0;
-    node->position.time = 0;
-    nodeDB.setLocalPosition(meshtastic_Position_init_default);
 }
 
 bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, meshtastic_Position *pptr)
@@ -58,10 +50,16 @@ bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
     // FIXME this can in fact happen with packets sent from EUD (src=RX_SRC_USER)
     // to set fixed location, EUD-GPS location or just the time (see also issue #900)
     bool isLocal = false;
-    if (nodeDB.getNodeNum() == getFrom(&mp)) {
-        LOG_DEBUG("Incoming update from MYSELF\n");
+    if (nodeDB->getNodeNum() == getFrom(&mp)) {
         isLocal = true;
-        nodeDB.setLocalPosition(p);
+        if (config.position.fixed_position) {
+            LOG_DEBUG("Ignore incoming position update from myself except for time, because position.fixed_position is true\n");
+            nodeDB->setLocalPosition(p, true);
+            return false;
+        } else {
+            LOG_DEBUG("Incoming update from MYSELF\n");
+            nodeDB->setLocalPosition(p);
+        }
     }
 
     // Log packet size and data fields
@@ -82,7 +80,7 @@ bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
         perhapsSetRTC(isLocal ? RTCQualityNTP : RTCQualityFromNet, &tv);
     }
 
-    nodeDB.updatePosition(getFrom(&mp), p);
+    nodeDB->updatePosition(getFrom(&mp), p);
     if (channels.getByIndex(mp.channel).settings.has_module_settings) {
         precision = channels.getByIndex(mp.channel).settings.module_settings.position_precision;
     } else if (channels.getByIndex(mp.channel).role == meshtastic_Channel_Role_PRIMARY) {
@@ -112,7 +110,7 @@ meshtastic_MeshPacket *PositionModule::allocReply()
     meshtastic_Position p = meshtastic_Position_init_default; //   Start with an empty structure
     // if localPosition is totally empty, put our last saved position (lite) in there
     if (localPosition.latitude_i == 0 && localPosition.longitude_i == 0) {
-        nodeDB.setLocalPosition(TypeConversions::ConvertToPosition(node->position));
+        nodeDB->setLocalPosition(TypeConversions::ConvertToPosition(node->position));
     }
     localPosition.seq_number++;
 
@@ -274,18 +272,19 @@ int32_t PositionModule::runOnce()
 {
     if (sleepOnNextExecution == true) {
         sleepOnNextExecution = false;
-        uint32_t nightyNightMs = getConfiguredOrDefaultMs(config.position.position_broadcast_secs);
+        uint32_t nightyNightMs = Default::getConfiguredOrDefaultMs(config.position.position_broadcast_secs);
         LOG_DEBUG("Sleeping for %ims, then awaking to send position again.\n", nightyNightMs);
         doDeepSleep(nightyNightMs, false);
     }
 
-    meshtastic_NodeInfoLite *node = nodeDB.getMeshNode(nodeDB.getNodeNum());
+    meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(nodeDB->getNodeNum());
     if (node == nullptr)
         return RUNONCE_INTERVAL;
 
     // We limit our GPS broadcasts to a max rate
     uint32_t now = millis();
-    uint32_t intervalMs = getConfiguredOrDefaultMs(config.position.position_broadcast_secs, default_broadcast_interval_secs);
+    uint32_t intervalMs =
+        Default::getConfiguredOrDefaultMs(config.position.position_broadcast_secs, default_broadcast_interval_secs);
     uint32_t msSinceLastSend = now - lastGpsSend;
     // Only send packets if the channel util. is less than 25% utilized or we're a tracker with less than 40% utilized.
     if (!airTime->isTxAllowedChannelUtil(config.device.role != meshtastic_Config_DeviceConfig_Role_TRACKER &&
@@ -316,7 +315,7 @@ int32_t PositionModule::runOnce()
         if (hasValidPosition(node2)) {
             // The minimum time (in seconds) that would pass before we are able to send a new position packet.
             const uint32_t minimumTimeThreshold =
-                getConfiguredOrDefaultMs(config.position.broadcast_smart_minimum_interval_secs, 30);
+                Default::getConfiguredOrDefaultMs(config.position.broadcast_smart_minimum_interval_secs, 30);
 
             auto smartPosition = getDistanceTraveledSinceLastSend(node->position);
 
@@ -363,7 +362,8 @@ void PositionModule::sendLostAndFoundText()
 struct SmartPosition PositionModule::getDistanceTraveledSinceLastSend(meshtastic_PositionLite currentPosition)
 {
     // The minimum distance to travel before we are able to send a new position packet.
-    const uint32_t distanceTravelThreshold = getConfiguredOrDefault(config.position.broadcast_smart_minimum_distance, 100);
+    const uint32_t distanceTravelThreshold =
+        Default::getConfiguredOrDefault(config.position.broadcast_smart_minimum_distance, 100);
 
     // Determine the distance in meters between two points on the globe
     float distanceTraveledSinceLastSend = GeoCoord::latLongToMeter(
@@ -393,7 +393,7 @@ struct SmartPosition PositionModule::getDistanceTraveledSinceLastSend(meshtastic
 
 void PositionModule::handleNewPosition()
 {
-    meshtastic_NodeInfoLite *node = nodeDB.getMeshNode(nodeDB.getNodeNum());
+    meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(nodeDB->getNodeNum());
     const meshtastic_NodeInfoLite *node2 = service.refreshLocalMeshNode(); // should guarantee there is now a position
     // We limit our GPS broadcasts to a max rate
     uint32_t now = millis();
@@ -420,3 +420,5 @@ void PositionModule::handleNewPosition()
         }
     }
 }
+
+#endif

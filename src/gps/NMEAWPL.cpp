@@ -1,3 +1,4 @@
+#if !MESHTASTIC_EXCLUDE_GPS
 #include "NMEAWPL.h"
 #include "GeoCoord.h"
 #include "RTC.h"

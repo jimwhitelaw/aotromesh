@@ -65,6 +65,7 @@ static void initBrownout()
 
 static const bool useSoftDevice = true; // Set to false for easier debugging
 
+#if !MESHTASTIC_EXCLUDE_BLUETOOTH
 void setBluetoothEnable(bool enable)
 {
     if (enable && config.bluetooth.enabled) {
@@ -88,7 +89,9 @@ void setBluetoothEnable(bool enable)
         }
     }
 }
-
+#else
+void setBluetoothEnable(bool enable) {}
+#endif
 /**
  * Override printf to use the SEGGER output library (note - this does not effect the printf method on the debug console)
  */
@@ -177,7 +180,7 @@ void cpuDeepSleep(uint32_t msecToWake)
 #ifdef PIN_3V3_EN
     digitalWrite(PIN_3V3_EN, LOW);
 #endif
-#ifndef USE_EINK
+#ifdef AQ_SET_PIN
     // RAK-12039 set pin for Air quality sensor
     digitalWrite(AQ_SET_PIN, LOW);
 #endif
