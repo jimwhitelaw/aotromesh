@@ -29,7 +29,7 @@ class EInkDisplay : public OLEDDisplay
     /// thereafter we do once per 5 minutes
     uint32_t slowUpdateMsec = 5 * 60 * 1000;
 
-public:
+  public:
     /* constructor
     FIXME - the parameters are not used, just a temporary hack to keep working like the old displays
     */
@@ -58,7 +58,7 @@ public:
      */
     void setDetected(uint8_t detected);
 
-protected:
+  protected:
     // the header size of the buffer used, e.g. for the SPI command header
     virtual int getBufferOffset(void) override { return 0; }
 
@@ -74,6 +74,8 @@ protected:
     // If display uses HSPI
 #if defined(HELTEC_WIRELESS_PAPER) || defined(HELTEC_WIRELESS_PAPER_V1_0)
     SPIClass *hspi = NULL;
+#endif
+
 #if defined(USE_EINK_DYNAMIC_REFRESH)
     // Full, fast, or skip: balance urgency with display health
 
@@ -115,12 +117,12 @@ protected:
         #define EINK_PARTIAL_ERASURE_LIMIT 300     // optional
     */
 
-public:
+  public:
     void highPriority();      // Suggest partial refresh
     void lowPriority();       // Suggest full refresh
     void demandFullRefresh(); // For next update: explicitly request full refresh
 
-protected:
+  protected:
     void configForPartialRefresh(); // Display specific code to select partial refresh mode
     void configForFullRefresh();    // Display specific code to return to full refresh mode
     bool newImageMatchesOld();      // Is the new update actually different to the last image?
@@ -146,7 +148,7 @@ protected:
     // Set in variant.h
     const uint32_t lowPriorityLimitMsec = (uint32_t)1000 * EINK_LOWPRIORITY_LIMIT_SECONDS;   // Max rate for fast refreshes
     const uint32_t highPriorityLimitMsec = (uint32_t)1000 * EINK_HIGHPRIORITY_LIMIT_SECONDS; // Max rate for full refreshes
-    const uint32_t partialRefreshLimit = EINK_PARTIAL_REPEAT_LIMIT;                          // Max consecutive partials, before full is triggered
+    const uint32_t partialRefreshLimit = EINK_PARTIAL_REPEAT_LIMIT; // Max consecutive partials, before full is triggered
 
 #else // !USE_EINK_DYNAMIC_REFRESH
     // Tolerate calls to these methods anywhere, just to be safe
@@ -156,3 +158,4 @@ protected:
     void demandFullRefresh() {}
 #endif
 };
+#endif // USE_EINK
