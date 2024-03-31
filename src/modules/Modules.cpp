@@ -1,4 +1,11 @@
 #include "configuration.h"
+#include "modules/AdminModule.h"
+#include "modules/EFlagsModule/EFlagsModule.h"
+#include "modules/EFlagsModule/oledHelper.h"
+#include "modules/NodeInfoModule.h"
+#include "modules/RoutingModule.h"
+#include "modules/TextMessageModule.h"
+
 #if !MESHTASTIC_EXCLUDE_INPUTBROKER
 #include "input/InputBroker.h"
 #include "input/RotaryEncoderInterruptImpl1.h"
@@ -7,7 +14,7 @@
 #include "input/cardKbI2cImpl.h"
 #include "input/kbMatrixImpl.h"
 #endif
-#include "modules/AdminModule.h"
+
 #if !MESHTASTIC_EXCLUDE_ATAK
 #include "modules/AtakPluginModule.h"
 #endif
@@ -21,7 +28,6 @@
 #if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
 #include "modules/NeighborInfoModule.h"
 #endif
-#include "modules/NodeInfoModule.h"
 #if !MESHTASTIC_EXCLUDE_GPS
 #include "modules/PositionModule.h"
 #endif
@@ -29,8 +35,6 @@
 #include "modules/RemoteHardwareModule.h"
 #include "modules/ReplyModule.h"
 #endif
-#include "modules/RoutingModule.h"
-#include "modules/TextMessageModule.h"
 #if !MESHTASTIC_EXCLUDE_TRACEROUTE
 #include "modules/TraceRouteModule.h"
 #endif
@@ -83,13 +87,13 @@ void setupModules()
 #endif
         adminModule = new AdminModule();
         nodeInfoModule = new NodeInfoModule();
+        textMessageModule = new TextMessageModule();
 #if !MESHTASTIC_EXCLUDE_GPS
         positionModule = new PositionModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
         waypointModule = new WaypointModule();
 #endif
-        textMessageModule = new TextMessageModule();
 #if !MESHTASTIC_EXCLUDE_TRACEROUTE
         traceRouteModule = new TraceRouteModule();
 #endif
@@ -102,15 +106,17 @@ void setupModules()
 #if !MESHTASTIC_EXCLUDE_ATAK
         atakPluginModule = new AtakPluginModule();
 #endif
-        // Note: if the rest of meshtastic doesn't need to explicitly use your module, you do not need to assign the instance
-        // to a global variable.
-
 #if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
         new RemoteHardwareModule();
 #endif
+
+        // Note: if the rest of meshtastic doesn't need to explicitly use your module, you do not need to assign the instance
+        // to a global variable.
+
         // Example: Put your module here
         // new ReplyModule();
         new EFlagsModule();
+
 #if (HAS_BUTTON || ARCH_PORTDUINO) && !MESHTASTIC_EXCLUDE_INPUTBROKER
         rotaryEncoderInterruptImpl1 = new RotaryEncoderInterruptImpl1();
         if (!rotaryEncoderInterruptImpl1->init()) {
