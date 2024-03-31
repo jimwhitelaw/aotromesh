@@ -24,7 +24,11 @@
 #if !defined(CONFIG_IDF_TARGET_ESP32S2) && !MESHTASTIC_EXCLUDE_BLUETOOTH
 void setBluetoothEnable(bool enable)
 {
+#if !HAS_WIFI
+    if (config.bluetooth.enabled == true) {
+#else
     if (!isWifiAvailable() && config.bluetooth.enabled == true) {
+#endif
         if (!nimbleBluetooth) {
             nimbleBluetooth = new NimbleBluetooth();
         }
