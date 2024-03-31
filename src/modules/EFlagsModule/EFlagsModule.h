@@ -86,38 +86,37 @@ static const uint8_t PROGMEM mono_bmp[][8] = {
 
 class EFlagsModule : public SinglePortModule, private concurrency::OSThread
 {
-public:
-  EFlagsModule() : SinglePortModule("eflags", meshtastic_PortNum_PRIVATE_APP), OSThread("eflagsModule") {}
+  public:
+    EFlagsModule() : SinglePortModule("eflags", meshtastic_PortNum_PRIVATE_APP), OSThread("eflagsModule") {}
 
-  enum FlagState
-  {
-    FLAG_NONE,
-    GREEN_FLAG,
-    YELLOW_FLAG,
-    BLUE_FLAG,
-    WHITE_FLAG,
-    BLACK_FLAG,
-    RED_FLAG,
-    BLACK_FLAG_ALL,
-    MEATBALL_FLAG,
-    SURFACE_FLAG,
-    CHECKERED_FLAG,
-    WAVED_YELLOW,
-    DOUBLE_YELLOW,
-    WAVED_WHITE,
-    WHITE_AND_YELLOW,
-    OPTION
-  };
+    enum FlagState {
+        FLAG_NONE,
+        GREEN_FLAG,
+        YELLOW_FLAG,
+        BLUE_FLAG,
+        WHITE_FLAG,
+        BLACK_FLAG,
+        RED_FLAG,
+        BLACK_FLAG_ALL,
+        MEATBALL_FLAG,
+        SURFACE_FLAG,
+        CHECKERED_FLAG,
+        WAVED_YELLOW,
+        DOUBLE_YELLOW,
+        WAVED_WHITE,
+        WHITE_AND_YELLOW,
+        OPTION
+    };
 
-protected:
-  virtual ProcessMessage handleReceived(const meshtastic_MeshPacket &mp) override;
-  // virtual meshtastic_MeshPacket *allocReply() override;
-  virtual int32_t runOnce() override;
+  protected:
+    virtual ProcessMessage handleReceived(const meshtastic_MeshPacket &mp) override;
+    // virtual meshtastic_MeshPacket *allocReply() override;
+    virtual int32_t runOnce() override;
 
-private:
-  void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
-  void setFlagState(uint8_t state, uint16_t car_num);
-  bool firstTime = true;
+  private:
+    void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
+    void setFlagState(uint8_t state, uint16_t car_num);
+    bool firstTime = true;
 };
 
 extern EFlagsModule *eflagsModule;

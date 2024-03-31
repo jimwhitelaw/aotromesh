@@ -2,21 +2,25 @@
 #include "MeshService.h"
 #include "configuration.h"
 #include "main.h"
+#include "oledHelper.h"
+
 // #include <Adafruit_GFX.h>
 // #include <FastLED_NeoMatrix.h>
 // #include <FastLED.h>
 // #include <LEDMatrix.h>
 
 // Testing with NeoPixel 7 seg module
-#include <Adafruit_NeoPixel.h>
-#define PIN 4
+// #include <Adafruit_NeoPixel.h>
+// #define PIN 4
 
 #define DELAY_INTERVAL 4000 // Send a flag change command every 4 sec
-#define BASE_STATION 0      // Flag stations only receive and respond to command. Only base unit sends commands
+#ifndef BASE_STATION
+#define BASE_STATION 0 // Flag stations only receive and respond to command. Only base unit sends commands
+#endif
 
 EFlagsModule *eflagsModule;
 uint8_t flagState = 0;
-NodeNum nodenums[4] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334};
+NodeNum nodenums[5] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334, 0x08ab61bc};
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -26,7 +30,7 @@ NodeNum nodenums[4] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334};
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(7, PIN, NEO_GRB + NEO_KHZ800);
+// Adafruit_NeoPixel strip = Adafruit_NeoPixel(7, PIN, NEO_GRB + NEO_KHZ800);
 
 // CRGB leds[NUMMATRIX];
 // // Define matrix width and height.
@@ -98,46 +102,51 @@ int32_t EFlagsModule::runOnce()
         // let's pick a random flag state to command
         flagState = random(1, 6);
 
-        uint16_t car_number = UINT16_MAX;
+        // uint16_t car_number = UINT16_MAX;
 
         if (firstTime) // first time we run, set all flags to none
         {
             firstTime = false;
             flagState = FLAG_NONE;
             sendFlagCommand(NODENUM_BROADCAST, FLAG_NONE, UINT16_MAX);
+            // displayData("Sent No Flags");
             LOG_INFO("Intialized Base Station");
-        }
-        else // typical function
+        } else // typical function
         {
-            switch (flagState)
-            {
+            switch (flagState) {
             case FLAG_NONE:
                 sendFlagCommand(nodenum, FLAG_NONE);
+                // displayData("Sent No Flags");
                 flagState = GREEN_FLAG;
                 break;
 
             case GREEN_FLAG:
                 sendFlagCommand(nodenum, GREEN_FLAG);
+                // displayData("Sent GREEN Flag");
                 flagState = YELLOW_FLAG;
                 break;
 
             case YELLOW_FLAG:
                 sendFlagCommand(nodenum, YELLOW_FLAG);
+                // displayData("Sent YELLOW Flag");
                 flagState = BLUE_FLAG;
                 break;
 
             case BLUE_FLAG:
                 sendFlagCommand(nodenum, BLUE_FLAG);
+                // displayData("Sent BLUE Flag");
                 flagState = WHITE_FLAG;
                 break;
 
             case WHITE_FLAG:
                 sendFlagCommand(nodenum, WHITE_FLAG);
+                // displayData("Sent WHITE Flag");
                 flagState = RED_FLAG;
                 break;
 
             case RED_FLAG:
                 sendFlagCommand(NODENUM_BROADCAST, RED_FLAG);
+                // displayData("Sent RED Flag");
                 flagState = GREEN_FLAG;
                 break;
 
@@ -146,15 +155,15 @@ int32_t EFlagsModule::runOnce()
             }
         }
         return DELAY_INTERVAL;
-    }
-    else // flag station - init led
+    } else // flag station - init led
     {
-        if (firstTime)
-        {
-            strip.begin();
-            strip.setBrightness(20);
-            strip.show(); // Initialize all pixels to 'off'
-            setFlagState(FLAG_NONE, UINT16_MAX);
+        if (firstTime) {
+            setupOLEDDisplay();
+            displayData("None");
+            // // strip.begin();
+            // strip.setBrightness(20);
+            // strip.show(); // Initialize all pixels to 'off'
+            // setFlagState(FLAG_NONE, UINT16_MAX);
             firstTime = false;
         }
         // LOG_INFO("runOnce() has been called in station client");
@@ -165,8 +174,7 @@ int32_t EFlagsModule::runOnce()
 void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
 {
     meshtastic_MeshPacket *p = allocDataPacket();
-    if (p)
-    {
+    if (p) {
         p->to = dest;
         // set flag state
         p->decoded.payload.bytes[0] = cmd;
@@ -174,9 +182,7 @@ void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
         p->decoded.payload.bytes[1] = car_num & 0xFF00;
         p->decoded.payload.bytes[2] = car_num & 0xFF;
         p->decoded.payload.size = 3;
-    }
-    else
-    {
+    } else {
         p->decoded.payload.size = 1;
     }
     service.sendToMesh(p);
@@ -184,31 +190,24 @@ void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
 
 void EFlagsModule::setFlagState(uint8_t state, uint16_t car_num)
 {
-    switch (state)
-    {
+    switch (state) {
     case FLAG_NONE:
-        strip.clear();
-        strip.show();
+        displayData("NONE");
         break;
     case GREEN_FLAG:
-        strip.fill(strip.Color(0, 0xFF, 0), 0, 7);
-        strip.show();
+        displayData("GREEN");
         break;
     case YELLOW_FLAG:
-        strip.fill(strip.Color(0x77, 0x77, 0), 0, 7);
-        strip.show();
+        displayData("YELLOW");
         break;
     case RED_FLAG:
-        strip.fill(strip.Color(0xFF, 0, 0), 0, 7);
-        strip.show();
+        displayData("RED");
         break;
     case BLUE_FLAG:
-        strip.fill(strip.Color(0, 0, 0xFF), 0, 7);
-        strip.show();
+        displayData("BLUE");
         break;
     case WHITE_FLAG:
-        strip.fill(strip.Color(0xFF, 0xFF, 0xFF), 0, 7);
-        strip.show();
+        displayData("WHITE");
         break;
     default:
         break;
