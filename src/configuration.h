@@ -225,7 +225,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Global switches to turn off features for a minimized build
 // -----------------------------------------------------------------------------
 
-// #define MESHTASTIC_MINIMIZE_BUILD 1
+#define MESHTASTIC_MINIMIZE_BUILD 1
 #ifdef MESHTASTIC_MINIMIZE_BUILD
 #define MESHTASTIC_EXCLUDE_MODULES 1
 #define MESHTASTIC_EXCLUDE_WIFI 1

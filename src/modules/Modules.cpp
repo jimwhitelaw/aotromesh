@@ -17,7 +17,7 @@
 #include "modules/RoutingModule.h"
 #include "modules/TextMessageModule.h"
 #include "modules/TraceRouteModule.h"
-#endif
+
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
 #include "modules/WaypointModule.h"
 #endif
@@ -73,6 +73,7 @@ void setupModules()
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
         waypointModule = new WaypointModule();
+#endif
         textMessageModule = new TextMessageModule();
         traceRouteModule = new TraceRouteModule();
         neighborInfoModule = new NeighborInfoModule();

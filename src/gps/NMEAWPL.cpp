@@ -98,4 +98,5 @@ uint32_t printGGA(char *buf, size_t bufsz, const meshtastic_Position &pos)
     return len;
 }
 
-#endif
+#endif // HAS_GPS
+#endif // MESHTASTIC_EXCLUDE_GPS
