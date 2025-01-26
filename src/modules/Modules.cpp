@@ -8,7 +8,7 @@
 #include "modules/AdminModule.h"
 #include "modules/CannedMessageModule.h"
 #include "modules/DetectionSensorModule.h"
-#include "modules/EFlagsModule.h"
+#include "modules/EFlagsModule/EFlagsModule.h"
 #include "modules/NeighborInfoModule.h"
 #include "modules/NodeInfoModule.h"
 #include "modules/PositionModule.h"
@@ -25,7 +25,7 @@
 #include "input/LinuxInputImpl.h"
 #endif
 #if HAS_TELEMETRY
-#include "modules/Telemetry/DeviceTelemetry.h"
+// #include "modules/Telemetry/DeviceTelemetry.h"
 #endif
 #if HAS_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
 #include "modules/Telemetry/AirQualityTelemetry.h"
@@ -49,7 +49,7 @@
 #if !MESHTASTIC_EXCLUDE_EXTERNALNOTIFICATION
 #include "modules/ExternalNotificationModule.h"
 #endif
-#if !MESHTASTIC_EXCLUDE_RANGETEST && !MESHTASTIC_EXCLUDE_GPS
+#if !MESHTASTIC_EXCLUDE_RANGETEST && HAS_GPS
 #include "modules/RangeTestModule.h"
 #endif
 #if !defined(CONFIG_IDF_TARGET_ESP32S2) && !MESHTASTIC_EXCLUDE_SERIAL
@@ -68,8 +68,8 @@ void setupModules()
         adminModule = new AdminModule();
         nodeInfoModule = new NodeInfoModule();
         textMessageModule = new TextMessageModule();
-#if !MESHTASTIC_EXCLUDE_GPS
-        // positionModule = new PositionModule();
+#if HAS_GPS
+        positionModule = new PositionModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
         waypointModule = new WaypointModule();
@@ -148,7 +148,7 @@ void setupModules()
 #if !MESHTASTIC_EXCLUDE_EXTERNALNOTIFICATION
         externalNotificationModule = new ExternalNotificationModule();
 #endif
-#if !MESHTASTIC_EXCLUDE_RANGETEST && !MESHTASTIC_EXCLUDE_GPS
+#if !MESHTASTIC_EXCLUDE_RANGETEST && HAS_GPS
         new RangeTestModule();
 #endif
 #endif

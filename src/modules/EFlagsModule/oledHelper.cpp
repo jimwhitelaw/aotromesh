@@ -7,17 +7,17 @@ void setupOLEDDisplay()
 {
     Serial.println("Starting OLED display...");
     // Configure OLED by setting the OLED Reset HIGH, LOW, and then back HIGH
-    pinMode(OLED_RST, OUTPUT);
+    // pinMode(OLED_RST, OUTPUT);
     // digitalWrite(OLED_RST, HIGH);
     // delay(100);
     // digitalWrite(OLED_RST, LOW);
     // delay(100);
     // digitalWrite(OLED_RST, HIGH);
     display.init();
-    // display.flipScreenVertically();
+    display.flipScreenVertically();
     delay(200);
-    // display.clear();
-    // display.display();
+    display.clear();
+    display.display();
     Serial.println("OLED init complete.");
 }
 

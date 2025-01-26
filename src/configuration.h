@@ -222,7 +222,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 // -----------------------------------------------------------------------------
-// Global switches to turn off features for a minimized build
+// Global switches to turn off features for a minimized build.
+// The HAS_ macros are set according to the hw present, this provices a means to
+// turn off various features even though the hw might support it, in order to
+// minimize build size.
 // -----------------------------------------------------------------------------
 
 #define MESHTASTIC_MINIMIZE_BUILD 1
@@ -235,10 +238,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MESHTASTIC_EXCLUDE_MQTT 1
 #endif
 
-// Turn off all optional modules
+// Turn off all optional modules.
 #ifdef MESHTASTIC_EXCLUDE_MODULES
 #define MESHTASTIC_EXCLUDE_AUDIO 1
 #define MESHTASTIC_EXCLUDE_DETECTIONSENSOR 1
+#define MESHTASTIC_EXCLUDE_DEVICE_TELEMETRY 1
 #define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
 #define MESHTASTIC_EXCLUDE_EXTERNALNOTIFICATION 1
 #define MESHTASTIC_EXCLUDE_PAXCOUNTER 1
@@ -280,4 +284,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef MESHTASTIC_EXCLUDE_SCREEN
 #undef HAS_SCREEN
 #define HAS_SCREEN 0
+#endif
+
+// Turn off device telemetry
+#ifdef MESHTASTIC_EXCLUDE_DEVICE_TELEMETRY
+#undef HAS_TELEMETRY
+#define HAS_TELEMETRY 0
 #endif
