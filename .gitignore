@@ -55,3 +55,4 @@ data/static/site.webmanifest.gz
 .vscode/settings.jsonsrc/mesh/raspihttp/certificate.pem
 src/mesh/raspihttp/private_key.pemdownload_fs.py
 .vscode/settings.json
+.vscode/settings.json
