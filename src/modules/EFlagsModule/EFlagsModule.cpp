@@ -13,6 +13,11 @@
 uint8_t flagState = 0;
 NodeNum nodenums[5] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334, 0x08ab61bc};
 
+EFlagsModule::EFlagsModule() : SinglePortModule("EFlagsModule", meshtastic_PortNum_PRIVATE_APP), OSThread("EFlagsModule")
+{
+    setup();
+}
+
 void EFlagsModule::setup()
 {
     LOG_INFO("Starting up EFlagsModule...\n");
@@ -53,10 +58,10 @@ int32_t EFlagsModule::runOnce()
 
     if (BASE_STATION) // base station - sends'\0'} flag commands
     {
-        if (firstTime) {
-            setupOLEDDisplay();
-            firstTime = false;
-        }
+        // if (firstTime) {
+        //     setupOLEDDisplay();
+        //     firstTime = false;
+        // }
         // let's pick a random station
         NodeNum nodenum = nodenums[(int)random(0, sizeof(nodenums) / sizeof(nodenums[0]) - 1)];
 
@@ -65,7 +70,7 @@ int32_t EFlagsModule::runOnce()
 
         sendFlagCommand(nodenum, flagState);
         memset(message, '\0', sizeof(message));
-        sprintf(message, "Sent cmd %s\nto node\n0x%x\n", FlagStateNames[flagState], nodenum);
+        sprintf(message, "Sent cmd %s\n", FlagStateNames[flagState]);
         displayData(String(message));
         flagState++;
         if (flagState == sizeof(FlagStates)) {

@@ -2,8 +2,9 @@
 class EFlagsModule : public SinglePortModule, private concurrency::OSThread
 {
   public:
-    EFlagsModule() : SinglePortModule("EFlagsModule", meshtastic_PortNum_PRIVATE_APP), OSThread("EFlagsModule") {}
-
+    EFlagsModule();
+    // EFlagsModule() : SinglePortModule("EFlagsModule", meshtastic_PortNum_PRIVATE_APP), OSThread("EFlagsModule") {};
+    // EFlagsModule(const char *_name, meshtastic_PortNum _ourPortNum);
   protected:
     virtual void setup() override;
     virtual int32_t runOnce() override;

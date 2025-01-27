@@ -8,6 +8,9 @@
   "files.associations": {
     "*.h": "cpp",
     "string": "cpp",
-    "vector": "cpp"
+    "vector": "cpp",
+    "ctime": "cpp",
+    "istream": "cpp",
+    "ostream": "cpp"
   }
 }
