@@ -2,11 +2,13 @@
 
 #include "Observer.h"
 #include <Arduino.h>
+#include <algorithm>
 #include <assert.h>
 #include <vector>
 
 #include "MeshTypes.h"
 #include "NodeStatus.h"
+#include "configuration.h"
 #include "mesh-pb-constants.h"
 #include "mesh/generated/meshtastic/mesh.pb.h" // For CriticalErrorCode
 
@@ -20,15 +22,15 @@ DeviceState versions used to be defined in the .proto file but really only this 
 #define SEGMENT_DEVICESTATE 4
 #define SEGMENT_CHANNELS 8
 
-#define DEVICESTATE_CUR_VER 22
-#define DEVICESTATE_MIN_VER DEVICESTATE_CUR_VER
+#define DEVICESTATE_CUR_VER 23
+#define DEVICESTATE_MIN_VER 22
 
 extern meshtastic_DeviceState devicestate;
 extern meshtastic_ChannelFile channelFile;
 extern meshtastic_MyNodeInfo &myNodeInfo;
 extern meshtastic_LocalConfig config;
+extern meshtastic_DeviceUIConfig uiconfig;
 extern meshtastic_LocalModuleConfig moduleConfig;
-extern meshtastic_OEMStore oemStore;
 extern meshtastic_User &owner;
 extern meshtastic_Position localPosition;
 
@@ -37,6 +39,19 @@ uint32_t sinceLastSeen(const meshtastic_NodeInfoLite *n);
 
 /// Given a packet, return how many seconds in the past (vs now) it was received
 uint32_t sinceReceived(const meshtastic_MeshPacket *p);
+
+enum LoadFileResult {
+    // Successfully opened the file
+    LOAD_SUCCESS = 1,
+    // File does not exist
+    NOT_FOUND = 2,
+    // Device does not have a filesystem
+    NO_FILESYSTEM = 3,
+    // File exists, but could not decode protobufs
+    DECODE_FAILED = 4,
+    // File exists, but open failed for some reason
+    OTHER_FAILURE = 5
+};
 
 class NodeDB
 {
@@ -59,8 +74,8 @@ class NodeDB
     NodeDB();
 
     /// write to flash
-    void saveToDisk(int saveWhat = SEGMENT_CONFIG | SEGMENT_MODULECONFIG | SEGMENT_DEVICESTATE | SEGMENT_CHANNELS),
-        saveChannelsToDisk(), saveDeviceStateToDisk();
+    /// @return true if the save was successful
+    bool saveToDisk(int saveWhat = SEGMENT_CONFIG | SEGMENT_MODULECONFIG | SEGMENT_DEVICESTATE | SEGMENT_CHANNELS);
 
     /** Reinit radio config if needed, because either:
      * a) sometimes a buggy android app might send us bogus settings or
@@ -84,7 +99,7 @@ class NodeDB
 
     /** Update user info and channel for this node based on received user data
      */
-    bool updateUser(uint32_t nodeId, const meshtastic_User &p, uint8_t channelIndex = 0);
+    bool updateUser(uint32_t nodeId, meshtastic_User &p, uint8_t channelIndex = 0);
 
     /// @return our node number
     NodeNum getNodeNum() { return myNodeInfo.my_node_num; }
@@ -111,12 +126,14 @@ class NodeDB
      */
     size_t getNumOnlineMeshNodes(bool localOnly = false);
 
-    void initConfigIntervals(), initModuleConfigIntervals(), resetNodes(), removeNodeByNum(uint nodeNum);
+    void initConfigIntervals(), initModuleConfigIntervals(), resetNodes(), removeNodeByNum(NodeNum nodeNum);
 
-    bool factoryReset();
+    bool factoryReset(bool eraseBleBonds = false);
 
-    bool loadProto(const char *filename, size_t protoSize, size_t objSize, const pb_msgdesc_t *fields, void *dest_struct);
-    bool saveProto(const char *filename, size_t protoSize, const pb_msgdesc_t *fields, const void *dest_struct);
+    LoadFileResult loadProto(const char *filename, size_t protoSize, size_t objSize, const pb_msgdesc_t *fields,
+                             void *dest_struct);
+    bool saveProto(const char *filename, size_t protoSize, const pb_msgdesc_t *fields, const void *dest_struct,
+                   bool fullAtomic = true);
 
     void installRoleDefaults(meshtastic_Config_DeviceConfig_Role role);
 
@@ -128,24 +145,31 @@ class NodeDB
         return &meshNodes->at(x);
     }
 
-    meshtastic_NodeInfoLite *getMeshNode(NodeNum n);
+    virtual meshtastic_NodeInfoLite *getMeshNode(NodeNum n);
     size_t getNumMeshNodes() { return numMeshNodes; }
+
+    // returns true if the maximum number of nodes is reached or we are running low on memory
+    bool isFull();
 
     void clearLocalPosition();
 
     void setLocalPosition(meshtastic_Position position, bool timeOnly = false)
     {
         if (timeOnly) {
-            LOG_DEBUG("Setting local position time only: time=%i\n", position.time);
+            LOG_DEBUG("Set local position time only: time=%u timestamp=%u", position.time, position.timestamp);
             localPosition.time = position.time;
+            localPosition.timestamp = position.timestamp > 0 ? position.timestamp : position.time;
             return;
         }
-        LOG_DEBUG("Setting local position: latitude=%i, longitude=%i, time=%i\n", position.latitude_i, position.longitude_i,
-                  position.time);
+        LOG_DEBUG("Set local position: lat=%i lon=%i time=%u timestamp=%u", position.latitude_i, position.longitude_i,
+                  position.time, position.timestamp);
         localPosition = position;
     }
 
+    bool hasValidPosition(const meshtastic_NodeInfoLite *n);
+
   private:
+    uint32_t lastNodeDbSave = 0; // when we last saved our db to flash
     /// Find a node in our DB, create an empty NodeInfoLite if missing
     meshtastic_NodeInfoLite *getOrCreateMeshNode(NodeNum n);
 
@@ -164,7 +188,15 @@ class NodeDB
     void cleanupMeshDB();
 
     /// Reinit device state from scratch (not loading from disk)
-    void installDefaultDeviceState(), installDefaultChannels(), installDefaultConfig(), installDefaultModuleConfig();
+    void installDefaultDeviceState(), installDefaultChannels(), installDefaultConfig(bool preserveKey),
+        installDefaultModuleConfig();
+
+    /// write to flash
+    /// @return true if the save was successful
+    bool saveToDiskNoRetry(int saveWhat);
+
+    bool saveChannelsToDisk();
+    bool saveDeviceStateToDisk();
 };
 
 extern NodeDB *nodeDB;
@@ -187,16 +219,6 @@ extern NodeDB *nodeDB;
 
         prefs.is_power_saving = True
 */
-
-// Our delay functions check for this for times that should never expire
-#define NODE_DELAY_FOREVER 0xffffffff
-
-/// Sometimes we will have Position objects that only have a time, so check for
-/// valid lat/lon
-static inline bool hasValidPosition(const meshtastic_NodeInfoLite *n)
-{
-    return n->has_position && (n->position.latitude_i != 0 || n->position.longitude_i != 0);
-}
 
 /** The current change # for radio settings.  Starts at 0 on boot and any time the radio settings
  * might have changed is incremented.  Allows others to detect they might now be on a new channel.

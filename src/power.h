@@ -1,7 +1,10 @@
 #pragma once
 #include "PowerStatus.h"
 #include "concurrency/OSThread.h"
+#include "configuration.h"
+
 #ifdef ARCH_ESP32
+// "legacy adc calibration driver is deprecated, please migrate to use esp_adc/adc_cali.h and esp_adc/adc_cali_scheme.h
 #include <esp_adc_cal.h>
 #include <soc/adc_channel.h>
 #endif
@@ -36,13 +39,32 @@ extern RTC_NOINIT_ATTR uint64_t RTC_reg_b;
 #include "soc/sens_reg.h" // needed for adc pin reset
 #endif
 
-#if HAS_TELEMETRY && !defined(ARCH_PORTDUINO)
+#if HAS_TELEMETRY && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR && !defined(ARCH_PORTDUINO)
 #include "modules/Telemetry/Sensor/INA219Sensor.h"
+#include "modules/Telemetry/Sensor/INA226Sensor.h"
 #include "modules/Telemetry/Sensor/INA260Sensor.h"
 #include "modules/Telemetry/Sensor/INA3221Sensor.h"
-extern INA260Sensor ina260Sensor;
 extern INA219Sensor ina219Sensor;
+extern INA226Sensor ina226Sensor;
+extern INA260Sensor ina260Sensor;
 extern INA3221Sensor ina3221Sensor;
+#endif
+
+#if HAS_TELEMETRY && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR && !defined(ARCH_PORTDUINO) && !defined(ARCH_STM32WL)
+#include "modules/Telemetry/Sensor/MAX17048Sensor.h"
+extern MAX17048Sensor max17048Sensor;
+#endif
+
+#if HAS_TELEMETRY && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR && HAS_RAKPROT && !defined(ARCH_PORTDUINO)
+#include "modules/Telemetry/Sensor/RAK9154Sensor.h"
+extern RAK9154Sensor rak9154Sensor;
+#endif
+
+#ifdef HAS_PMU
+#include "XPowersAXP192.tpp"
+#include "XPowersAXP2101.tpp"
+#include "XPowersLibInterface.hpp"
+extern XPowersLibInterface *PMU;
 #endif
 
 class Power : private concurrency::OSThread
@@ -67,6 +89,8 @@ class Power : private concurrency::OSThread
     bool axpChipInit();
     /// Setup a simple ADC input based battery sensor
     bool analogInit();
+    /// Setup a Lipo battery level sensor
+    bool lipoInit();
 
   private:
     // open circuit voltage lookup table

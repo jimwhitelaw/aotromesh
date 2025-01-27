@@ -1,7 +1,10 @@
-#include "INA219Sensor.h"
-#include "../mesh/generated/meshtastic/telemetry.pb.h"
-#include "TelemetrySensor.h"
 #include "configuration.h"
+
+#if HAS_TELEMETRY && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
+
+#include "../mesh/generated/meshtastic/telemetry.pb.h"
+#include "INA219Sensor.h"
+#include "TelemetrySensor.h"
 #include <Adafruit_INA219.h>
 
 #ifndef INA219_MULTIPLIER
@@ -12,7 +15,7 @@ INA219Sensor::INA219Sensor() : TelemetrySensor(meshtastic_TelemetrySensorType_IN
 
 int32_t INA219Sensor::runOnce()
 {
-    LOG_INFO("Init sensor: %s\n", sensorName);
+    LOG_INFO("Init sensor: %s", sensorName);
     if (!hasSensor()) {
         return DEFAULT_SENSOR_MINIMUM_WAIT_TIME_BETWEEN_READS;
     }
@@ -29,6 +32,9 @@ void INA219Sensor::setup() {}
 
 bool INA219Sensor::getMetrics(meshtastic_Telemetry *measurement)
 {
+    measurement->variant.environment_metrics.has_voltage = true;
+    measurement->variant.environment_metrics.has_current = true;
+
     measurement->variant.environment_metrics.voltage = ina219.getBusVoltage_V();
     measurement->variant.environment_metrics.current = ina219.getCurrent_mA() * INA219_MULTIPLIER;
     return true;
@@ -38,3 +44,10 @@ uint16_t INA219Sensor::getBusVoltageMv()
 {
     return lround(ina219.getBusVoltage_V() * 1000);
 }
+
+int16_t INA219Sensor::getCurrentMa()
+{
+    return lround(ina219.getCurrent_mA());
+}
+
+#endif
