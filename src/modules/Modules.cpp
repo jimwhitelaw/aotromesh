@@ -18,8 +18,11 @@
 #endif
 #if !MESHTASTIC_EXCLUDE_CANNEDMESSAGES
 #include "modules/CannedMessageModule.h"
+#endif
+#if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
 #include "modules/DetectionSensorModule.h"
-#include "modules/EFlagsModule/EFlagsModule.h"
+#endif
+#if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
 #include "modules/NeighborInfoModule.h"
 #endif
 #if !MESHTASTIC_EXCLUDE_NODEINFO
@@ -27,6 +30,8 @@
 #endif
 #if !MESHTASTIC_EXCLUDE_GPS
 #include "modules/PositionModule.h"
+#endif
+#if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
 #include "modules/RemoteHardwareModule.h"
 #endif
 #if !MESHTASTIC_EXCLUDE_POWERSTRESS
@@ -34,8 +39,9 @@
 #endif
 #include "modules/RoutingModule.h"
 #include "modules/TextMessageModule.h"
+#if !MESHTASTIC_EXCLUDE_TRACEROUTE
 #include "modules/TraceRouteModule.h"
-
+#endif
 #if !MESHTASTIC_EXCLUDE_WAYPOINT
 #include "modules/WaypointModule.h"
 #endif
@@ -46,7 +52,7 @@
 #endif
 #endif
 #if HAS_TELEMETRY
-// #include "modules/Telemetry/DeviceTelemetry.h"
+#include "modules/Telemetry/DeviceTelemetry.h"
 #endif
 #if HAS_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
 #include "main.h"
@@ -84,12 +90,17 @@
 #include "modules/DropzoneModule.h"
 #endif
 
+#include "modules/EFlagsModule/EFlagsModule.h"
+
 /**
  * Create module instances here.  If you are adding a new module, you must 'new' it here (or somewhere else)
  */
 void setupModules()
 {
     if (config.device.role != meshtastic_Config_DeviceConfig_Role_REPEATER) {
+
+        new EFlagsModule();
+
 #if (HAS_BUTTON || ARCH_PORTDUINO) && !MESHTASTIC_EXCLUDE_INPUTBROKER
         inputBroker = new InputBroker();
 #endif
@@ -110,7 +121,11 @@ void setupModules()
 #endif
 #if !MESHTASTIC_EXCLUDE_TRACEROUTE
         traceRouteModule = new TraceRouteModule();
+#endif
+#if !MESHTASTIC_EXCLUDE_NEIGHBORINFO
         neighborInfoModule = new NeighborInfoModule();
+#endif
+#if !MESHTASTIC_EXCLUDE_DETECTIONSENSOR
         detectionSensorModule = new DetectionSensorModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_ATAK
@@ -122,7 +137,7 @@ void setupModules()
 #endif
         // Note: if the rest of meshtastic doesn't need to explicitly use your module, you do not need to assign the instance
         // to a global variable.
-
+#if !MESHTASTIC_EXCLUDE_REMOTEHARDWARE
         new RemoteHardwareModule();
 #endif
 #if !MESHTASTIC_EXCLUDE_POWERSTRESS
@@ -218,7 +233,7 @@ void setupModules()
 #if !MESHTASTIC_EXCLUDE_EXTERNALNOTIFICATION
         externalNotificationModule = new ExternalNotificationModule();
 #endif
-#if !MESHTASTIC_EXCLUDE_RANGETEST && HAS_GPS
+#if !MESHTASTIC_EXCLUDE_RANGETEST && !MESHTASTIC_EXCLUDE_GPS
         new RangeTestModule();
 #endif
 #endif
