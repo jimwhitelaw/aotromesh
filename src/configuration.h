@@ -300,7 +300,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // minimize build size.
 // -----------------------------------------------------------------------------
 
-#define MESHTASTIC_MINIMIZE_BUILD 1
+// #define MESHTASTIC_MINIMIZE_BUILD
 #ifdef MESHTASTIC_MINIMIZE_BUILD
 #define MESHTASTIC_EXCLUDE_MODULES 1
 #define MESHTASTIC_EXCLUDE_WIFI 1

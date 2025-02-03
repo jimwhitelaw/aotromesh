@@ -16,9 +16,9 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
     void setFlagState(uint8_t state, uint16_t car_num);
     bool firstTime = true;
 
-    enum MessageTypes { FLAG_COMMAND, FLAG_STATE };
+    enum FlagMessageType { FLAG_COMMAND, FLAG_STATE };
 
-    enum FlagStates {
+    enum FlagState {
         FLAG_NONE,
         GREEN_FLAG,
         YELLOW_FLAG,
@@ -51,6 +51,16 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
                                  "Waved White",
                                  "White and Yellow"
                                  "Option"};
-};
+    struct FlagStateMessage {
+        NodeNum from;
+        uint32_t state;
+    };
 
-// extern EFlagsModule *eflagsModule;
+    enum FlagCommandMessageBytes {
+        FLAG_MESSAGE_TYPE,
+        FLAG_MESSAGE_CMD,
+        FLAG_MESSAGE_CARNUM1,
+        FLAG_MESSAGE_CARNUM2,
+        FLAG_MESSAGE_BYTECOUNT
+    };
+};
