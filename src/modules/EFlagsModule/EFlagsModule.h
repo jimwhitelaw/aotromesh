@@ -12,11 +12,13 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
 
   private:
     void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
-    void sendFlagState(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
-    void setFlagState(uint8_t state, uint16_t car_num);
+    void sendFlagState(const meshtastic_MeshPacket &mp);
+    void setFlagState(const meshtastic_MeshPacket &mp);
     bool firstTime = true;
+    byte myFlagState = FLAG_NONE;
+    uint16_t myFlagCarNum = UINT16_MAX;
 
-    enum FlagMessageType { FLAG_COMMAND, FLAG_STATE };
+    enum FlagMessageType { MSG_TYPE_CMD, MSG_TYPE_STATE };
 
     enum FlagState {
         FLAG_NONE,

@@ -28,3 +28,12 @@ void displayData(String text)
     display.drawString(0, 0, text);
     display.display();
 }
+
+void displayLowerData(String text)
+{
+    display.clear();
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(0, 33, text);
+    display.display();
+}
