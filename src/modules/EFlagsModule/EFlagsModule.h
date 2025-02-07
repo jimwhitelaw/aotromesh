@@ -15,8 +15,8 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
     void sendFlagState(const meshtastic_MeshPacket &mp);
     void setFlagState(const meshtastic_MeshPacket &mp);
     bool firstTime = true;
-    byte myFlagState = FLAG_NONE;
-    uint16_t myFlagCarNum = UINT16_MAX;
+    volatile byte myFlagState = FLAG_NONE;
+    volatile uint16_t myFlagCarNum = UINT16_MAX;
 
     enum FlagMessageType { MSG_TYPE_CMD, MSG_TYPE_STATE };
 
@@ -36,7 +36,8 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
         DOUBLE_YELLOW,
         WAVED_WHITE,
         WHITE_AND_YELLOW,
-        OPTION
+        OPTION,
+        STATE_COUNT
     };
 
     String FlagStateNames[16] = {"No Flags",

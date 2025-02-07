@@ -24,16 +24,19 @@ void displayData(String text)
 {
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.setFont(ArialMT_Plain_16);
+    display.setFont(ArialMT_Plain_10);
     display.drawString(0, 0, text);
     display.display();
 }
 
 void displayLowerData(String text)
 {
-    display.clear();
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.setFont(ArialMT_Plain_16);
-    display.drawString(0, 33, text);
+    // display.clear();
+    display.setColor(BLACK);
+    display.fillRect(0, 45, 124, 11);
+    display.display();
+    display.setColor(WHITE);
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 45, text);
     display.display();
 }

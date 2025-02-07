@@ -11,3 +11,4 @@
 
 void setupOLEDDisplay();
 void displayData(String text);
+void displayLowerData(String text);

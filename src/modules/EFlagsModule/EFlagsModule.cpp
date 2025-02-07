@@ -4,7 +4,7 @@
 
 #define DELAY_INTERVAL 8000 // Send a flag change command every 4 sec
 #ifndef BASE_STATION
-#define BASE_STATION 0 // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 1 // Flag stations only receive and respond to command. Only base unit sends commands
 #endif
 
 uint8_t flagState = 0;
@@ -42,19 +42,12 @@ ProcessMessage EFlagsModule::handleReceived(const meshtastic_MeshPacket &mp)
     if (!BASE_STATION) {
         if (mp.to == myNodeInfo.my_node_num || isBroadcast(mp.to)) {
             setFlagState(mp);
-            sendFlagState(mp);
             memset(message, '\0', sizeof(message));
-            sprintf(message, "Set Flag: %s\nCar: %i\n", FlagStateNames[myFlagState], myFlagCarNum);
+            sprintf(message, "Received state cmd\n%s\nCar: %lu\n", FlagStateNames[myFlagState], myFlagCarNum);
             displayData(String(message));
-            // memset(message, '\0', sizeof(message));
-            // sprintf(message, "Rcvd state %s\n from: %X\n", FlagStateNames[myFlagState], mp.from);
-            // displayData(String(message));
+            sendFlagState(mp);
+            displayLowerData("Sent state message");
         }
-        // auto &p = mp.decoded;
-        // // LOG_INFO("Received flags msg from=0x%0x, id=0x%x, msg=%.*s\n", mp.from, mp.id, p.payload.size, p.payload.bytes);
-        // uint16_t car_num = (p.payload.bytes[3] << 8) | p.payload.bytes[4];
-        // LOG_INFO("Received flag command %s\n", FlagStateNames[p.payload.bytes[1]]);
-        // setFlagState(p.payload.bytes[FLAG_MESSAGE_CMD], car_num);
 
     } else { // BASE_STATION
         auto &flagMsg = mp.decoded.payload.bytes;
@@ -74,21 +67,17 @@ int32_t EFlagsModule::runOnce()
         // NodeNum nodenum = nodenums[(int)random(0, sizeof(nodenums) / sizeof(nodenums[0]) - 1)];
         NodeNum nodenum = nodenums[0];
         // let's pick a random flag state to command
-        flagState = random(1, sizeof(FlagState));
+        flagState = (int)random(1, STATE_COUNT);
         if (flagState == BLACK_FLAG || flagState == MEATBALL_FLAG) {
             // let's pick a random car number
-            carNum = int(random(0, 1000));
+            carNum = (uint16_t)(random(1, 1000));
         } else {
             carNum = UINT16_MAX;
         }
         sendFlagCommand(nodenum, flagState, carNum);
         memset(message, '\0', sizeof(message));
-        sprintf(message, "Sent cmd %s\n to Stn: %X\n", FlagStateNames[flagState], nodenum);
+        sprintf(message, "Sent command \n%s\nCar: %u\nStn: %X\n", FlagStateNames[flagState], carNum, nodenum);
         displayData(String(message));
-        flagState++;
-        if (flagState == sizeof(FlagState)) {
-            flagState = 0;
-        }
         return DELAY_INTERVAL;
     }
 
@@ -111,31 +100,32 @@ void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)
     meshtastic_MeshPacket *p = allocDataPacket();
     p->to = dest;
     // p->want_ack = true;
-    p->decoded.payload.bytes[FLAG_MESSAGE_TYPE] = MSG_TYPE_CMD;        // set message type
-    p->decoded.payload.bytes[FLAG_MESSAGE_CMD] = cmd;                  // set commanded flag state
-    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM1] = car_num & 0xFF00; // car_num is is two bytes
-    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM2] = car_num & 0xFF;
+    p->decoded.payload.bytes[FLAG_MESSAGE_TYPE] = MSG_TYPE_CMD;            // set message type
+    p->decoded.payload.bytes[FLAG_MESSAGE_CMD] = cmd;                      // set commanded flag state
+    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM1] = (byte)(car_num >> 8); // car_num is is two bytes
+    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM2] = (byte)car_num;
     p->decoded.payload.size = FLAG_MESSAGE_BYTECOUNT;
     service->sendToMesh(p);
-    LOG_INFO("Sent command %s to node %X", FlagStateNames[cmd], dest);
+    LOG_INFO("Sent command: %s Car: %lu to node %X", FlagStateNames[cmd], car_num, dest);
 }
 
 void EFlagsModule::setFlagState(const meshtastic_MeshPacket &mp)
 {
     auto &flagMsg = mp.decoded.payload.bytes;
     myFlagState = flagMsg[FLAG_MESSAGE_CMD];
-    myFlagCarNum = (flagMsg[3] << 8) | flagMsg[4];
-    LOG_INFO("Set current state %s Car:%i", FlagStateNames[myFlagState], myFlagCarNum);
+    myFlagCarNum = (uint16_t)(flagMsg[FLAG_MESSAGE_CARNUM1] << 8) + flagMsg[FLAG_MESSAGE_CARNUM2];
+    LOG_INFO("Set current state %s Car: %lu", FlagStateNames[myFlagState],
+             (uint16_t)(flagMsg[FLAG_MESSAGE_CARNUM1] * 256) + flagMsg[FLAG_MESSAGE_CARNUM2]);
 }
 
 void EFlagsModule::sendFlagState(const meshtastic_MeshPacket &mp)
 {
     meshtastic_MeshPacket *p = allocDataPacket();
     p->to = mp.from;
-    p->decoded.payload.bytes[FLAG_MESSAGE_TYPE] = MSG_TYPE_STATE;           // set message type
-    p->decoded.payload.bytes[FLAG_MESSAGE_CMD] = myFlagState;               // set commanded flag state
-    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM1] = myFlagCarNum & 0xFF00; // car_num is is two bytes
-    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM2] = myFlagCarNum & 0xFF;
+    p->decoded.payload.bytes[FLAG_MESSAGE_TYPE] = MSG_TYPE_STATE;               // set message type
+    p->decoded.payload.bytes[FLAG_MESSAGE_CMD] = myFlagState;                   // set commanded flag state
+    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM1] = (byte)(myFlagCarNum >> 8); // car_num is is two bytes
+    p->decoded.payload.bytes[FLAG_MESSAGE_CARNUM2] = (byte)myFlagCarNum;
     p->decoded.payload.size = FLAG_MESSAGE_BYTECOUNT;
     service->sendToMesh(p);
     LOG_INFO("Sent current state %s", FlagStateNames[myFlagState]);
