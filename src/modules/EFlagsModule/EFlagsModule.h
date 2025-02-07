@@ -36,24 +36,14 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
         DOUBLE_YELLOW,
         WAVED_WHITE,
         WHITE_AND_YELLOW,
+        FLAG_WARNING,
         OPTION,
         STATE_COUNT
     };
 
-    String FlagStateNames[16] = {"No Flags",
-                                 "Green",
-                                 "Yellow",
-                                 "Blue",
-                                 "White",
-                                 "Black",
-                                 "Meatball",
-                                 "Surface",
-                                 "Checkered",
-                                 "Waved Yellow",
-                                 "Double Yellow",
-                                 "Waved White",
-                                 "White and Yellow"
-                                 "Option"};
+    String FlagStateNames[17] = {"No Flag",       "Green",       "Yellow",           "Blue",    "White",     "Black",
+                                 "Red",           "Black All",   "Meatball",         "Surface", "Checkered", "Waved Yellow",
+                                 "Double Yellow", "Waved White", "White and Yellow", "Warning", "Option"};
     struct FlagStateMessage {
         NodeNum from;
         uint32_t state;

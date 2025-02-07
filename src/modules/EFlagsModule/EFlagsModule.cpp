@@ -4,13 +4,13 @@
 
 #define DELAY_INTERVAL 8000 // Send a flag change command every 4 sec
 #ifndef BASE_STATION
-#define BASE_STATION 1 // Flag stations only receive and respond to command. Only base unit sends commands
+#define BASE_STATION 0 // Flag stations only receive and respond to command. Only base unit sends commands
 #endif
 
 uint8_t flagState = 0;
 uint16_t carNum = UINT16_MAX;
 // NodeNum nodenums[5] = {0x08ab5ecc, 0x08ab5810, 0x08ad6334, 0x08ad6334, 0x08ab61bc};
-NodeNum nodenums[1] = {0x08ab5810};
+NodeNum nodenums[2] = {0x08ab5810, 0x7c5b178c};
 char message[64] = {'\0'};
 
 EFlagsModule::EFlagsModule() : SinglePortModule("EFlagsModule", meshtastic_PortNum_PRIVATE_APP), OSThread("EFlagsModule")
@@ -23,17 +23,47 @@ void EFlagsModule::setup()
     LOG_INFO("Starting up EFlagsModule...\n");
     setupOLEDDisplay();
     char message[64] = "";
-
+    firstTime = false;
+    flagState = FLAG_NONE;
+    carNum = UINT16_MAX;
     if (BASE_STATION) // base station - sends flag commands
     {
-        firstTime = false;
-        flagState = FLAG_NONE;
-        // sendFlagCommand(NODENUM_BROADCAST, flagState, UINT16_MAX);
-        sprintf(message, "Sent %s to node:%X", FlagStateNames[flagState], flagState);
-        displayData(String(message));
-        LOG_INFO("Intialized Base Station\n");
+        displayData("Base Station init.");
+        LOG_INFO("Base Station initialized.\n");
     } else {
-        LOG_INFO("Initialized flag stn %X", myNodeInfo.my_node_num);
+        displayData("Init: No Flags");
+        LOG_INFO("Client init.");
+    }
+}
+
+int32_t EFlagsModule::runOnce()
+{
+    if (BASE_STATION) {
+        carNum = UINT16_MAX;
+        NodeNum nodenum = nodenums[(int)random(2)];
+        flagState = (int)random(STATE_COUNT);
+        switch (flagState) {
+        case BLACK_FLAG:
+        case MEATBALL_FLAG:
+        case FLAG_WARNING:
+            carNum = (uint16_t)(random(1000));
+            break;
+        case RED_FLAG:
+        case BLACK_FLAG_ALL:
+        case CHECKERED_FLAG:
+        case DOUBLE_YELLOW:
+            nodenum = NODENUM_BROADCAST;
+            break;
+        default:
+            break;
+        }
+        sendFlagCommand(nodenum, flagState, carNum);
+        memset(message, '\0', sizeof(message));
+        sprintf(message, "Sent command \n%s\nCar: %u\nStn: %X\n", FlagStateNames[flagState], carNum, nodenum);
+        displayData(String(message));
+        return DELAY_INTERVAL;
+    } else {
+        return 0;
     }
 }
 
@@ -56,43 +86,6 @@ ProcessMessage EFlagsModule::handleReceived(const meshtastic_MeshPacket &mp)
         }
     }
     return ProcessMessage::STOP;
-}
-
-int32_t EFlagsModule::runOnce()
-{
-
-    if (BASE_STATION) // base station - sends'\0'} flag commands
-    {
-        // let's pick a random station
-        // NodeNum nodenum = nodenums[(int)random(0, sizeof(nodenums) / sizeof(nodenums[0]) - 1)];
-        NodeNum nodenum = nodenums[0];
-        // let's pick a random flag state to command
-        flagState = (int)random(1, STATE_COUNT);
-        if (flagState == BLACK_FLAG || flagState == MEATBALL_FLAG) {
-            // let's pick a random car number
-            carNum = (uint16_t)(random(1, 1000));
-        } else {
-            carNum = UINT16_MAX;
-        }
-        sendFlagCommand(nodenum, flagState, carNum);
-        memset(message, '\0', sizeof(message));
-        sprintf(message, "Sent command \n%s\nCar: %u\nStn: %X\n", FlagStateNames[flagState], carNum, nodenum);
-        displayData(String(message));
-        return DELAY_INTERVAL;
-    }
-
-    else // flag station - init led
-    {
-        if (firstTime) {
-            // setupOLEDDisplay();
-            displayData("Init: No Flags");
-            // setFlagState(FLAG_NONE, UINT16_MAX);
-            firstTime = false;
-            LOG_INFO("runOnce() has been called firstTime in client");
-        }
-        // LOG_INFO("runOnce() has been called in station client");
-        return 0;
-    }
 }
 
 void EFlagsModule::sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num)

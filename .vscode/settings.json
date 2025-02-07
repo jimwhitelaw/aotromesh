@@ -11,6 +11,8 @@
   "files.associations": {
     "*.h": "cpp",
     "utility": "cpp",
-    "iostream": "cpp"
+    "iostream": "cpp",
+    "string": "cpp",
+    "vector": "cpp"
   }
 }
