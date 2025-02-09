@@ -14,11 +14,13 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
     void sendFlagCommand(NodeNum dest, uint8_t cmd, uint16_t car_num = UINT16_MAX);
     void sendFlagState(const meshtastic_MeshPacket &mp);
     void setFlagState(const meshtastic_MeshPacket &mp);
-    bool firstTime = true;
-    volatile byte myFlagState = FLAG_NONE;
-    volatile uint16_t myFlagCarNum = UINT16_MAX;
+    void sendUpdateRequest(NodeNum stn = NODENUM_BROADCAST);
 
-    enum FlagMessageType { MSG_TYPE_CMD, MSG_TYPE_STATE };
+    bool firstTime = true;
+    volatile byte myStationState = FLAG_NONE;
+    volatile uint16_t myStationCarNum = UINT16_MAX;
+
+    enum FlagMessageType { MSG_TYPE_CMD, MSG_TYPE_STATE, MSG_TYPE_CONFIG, MSG_TYPE_UPDATE_REQUEST };
 
     enum FlagState {
         FLAG_NONE,
@@ -46,7 +48,8 @@ class EFlagsModule : public SinglePortModule, private concurrency::OSThread
                                  "Double Yellow", "Waved White", "White and Yellow", "Warning", "Option"};
     struct FlagStateMessage {
         NodeNum from;
-        uint32_t state;
+        FlagState state;
+        uint16_t car;
     };
 
     enum FlagCommandMessageBytes {

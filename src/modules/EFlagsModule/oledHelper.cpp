@@ -33,10 +33,10 @@ void displayLowerData(String text)
 {
     // display.clear();
     display.setColor(BLACK);
-    display.fillRect(0, 45, 124, 11);
+    display.fillRect(0, 34, 128, 11);
     display.display();
     display.setColor(WHITE);
     display.setFont(ArialMT_Plain_10);
-    display.drawString(0, 45, text);
+    display.drawString(0, 37, text);
     display.display();
 }
